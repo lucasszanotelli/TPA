@@ -1,14 +1,15 @@
 #include <cstdio>
 #include <cstdlib>
+#include <string>
 
 struct Aluno{
-    char matricula[9];
-    char cpf[15];
-    char nome[50];
+    std::string matricula;
+    std::string cpf[15];
+    std::string nome[50];
     float nota;
     int idade;
-    char curso[20];
-    char cidade[20];
+    std::string curso[20];
+    std::string cidade[20];
 
     Aluno *prox;
     Aluno *ant;
@@ -26,7 +27,6 @@ void inicializa(){
     a.quantidade = 0;
     a.head = NULL;
     a.end = NULL;
-
 }
 
 
@@ -37,9 +37,16 @@ bool inserir(Aluno *x){
         a.head = NULL;
         a.end = NULL;
     }
+    if (a.head == NULL){ //nessa condição, x é o primeiro e único elemento da lista, logo, seu prox e seu ant é NULL e o início e fim serão iguais
+        a.head = a.end = x; 
+        x->ant = x->prox = NULL;
+    }else if(a.end == NULL) { 
+
+    }
+    
+    
         
     return true;
-
 }
 
 
@@ -48,16 +55,7 @@ Aluno *ler_aluno(){
 
     return b;
 
-
-
 }
-
-
-
-
-
-
-
 
 int main(){
    
