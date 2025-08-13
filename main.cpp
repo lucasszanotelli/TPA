@@ -118,6 +118,8 @@ void ler_aluno() {
             colunas[6]
         };
 
+        int last2 = stoi(new_student->cpf.substr(new_student->cpf.size() - 2));
+
         //insert_normal(new_student);
         insert_ordenado(new_student);
     }
