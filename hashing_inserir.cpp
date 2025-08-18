@@ -271,19 +271,17 @@ void print_student(Student *student) {
 }
 
 void print_list() {
-    for (int i = 0; i < table_hashing.size_hashing; i++) { // percorre todos os buckets
-        Student *current = table_hashing.students[i].head;
-        while (current != nullptr) { // percorre a lista encadeada dentro do bucket
-            print_student(current);
-            current = current->next;
-        }
+    Student *current = table_hashing.students->head;
+    while (current != nullptr) {
+        print_student(current);
+        current = current->next;
     }
 }
+
 int menu() {
     cout << " ==== Menu: ==== \n" << endl;
     cout << "1 - Buscar aluno" << endl
-         << "2 - Busca Automática" << endl
-         << "3 - Listar todos os alunos" << endl
+         << "2 - Listar todos os alunos" << endl
          << "0 - Sair" << endl
          << "\nOpção: ";
 
@@ -291,66 +289,35 @@ int menu() {
     cin >> opcao;
     return opcao;
 }
-
-void search(string term) {
+void search() {
+    string term;
+    int option;
     bool found = false;
 
-    for (int i = 0; i < table_hashing.size_hashing; i++){
+    cout << "\nDigite o termo de busca (CPF ou Nome): ";
+    cin.ignore();
+    getline(cin, term);  // Permite nomes com espaços
 
-        Student *current = table_hashing.students[i].head;
-        while (current != nullptr) {
-            if (current->name.find(term) != string::npos || current->cpf.find(term) != string::npos) {
-                found = true;
-                print_student(current);
-                
+    Student *current = table_hashing.students->head;
+    while (current != nullptr) {
+        if (current->name.find(term) != string::npos || current->cpf.find(term) != string::npos) {
+            found = true;
+            print_student(current);
+            cout << "\nDigite 1 para remover esse aluno, qualquer outra tecla para continuar: ";
+            cin >> option;
+            if (option == 1) {
+                Student *to_remove = current;
+                current = current->next;  // Avança antes de remover
+                remove_student(to_remove);
+                continue;  // Pula o incremento normal
             }
-            current = current->next;
         }
+        current = current->next;
     }
 
     if (!found) {
         cout << "\nNenhum aluno encontrado com o termo fornecido.\n\n";
     }
-}
-
-void what_term(){
-    string term;
-    cout << "\nDigite o termo de busca (CPF ou Nome): ";
-    cin.ignore();
-    getline(cin, term);  // Permite nomes com espaços
-    search(term);
-    
-}
-
-void read_line() {
-    ifstream file("../busca_10_alunos.csv");
-    if (!file.is_open()) {
-        cerr << "Erro ao abrir o arquivo de busca." << endl;
-        return; 
-    }
-
-    string line;
-    getline(file, line); // descarta o cabeçalho
-
-    while (getline(file, line)) {
-        vector<string> columns;
-        size_t start = 0, end;
-
-        // divide a linha por vírgulas
-        while ((end = line.find(',', start)) != string::npos) {
-            columns.emplace_back(line.substr(start, end - start));
-            start = end + 1;
-        }
-        columns.emplace_back(line.substr(start)); // último campo
-
-        if (columns.size() < 3) continue; // garante que tem a coluna do nome
-
-        string term = columns[2]; // terceira coluna = Nome
-        cout << "\nBuscando: " << term << endl;
-        search(term); // passa só o nome para a função de busca
-    }
-
-    file.close();
 }
 
 int main(){
@@ -368,8 +335,6 @@ int main(){
 
     HASH DE 1000000 - SEIS ÚLTIMOS NÚMEROS DO CPF:
     Tempo de execução: 6.334 segundos..
-    BUSCA AUTOMÁTICA
-    Tempo de execução: 1.809 segundos.
 
     */
 
@@ -391,21 +356,13 @@ int main(){
         switch (option) {
             case 1: {
                 cout << "==== 1 - Buscar aluno ==== " << endl;
-                what_term();
-
+                
+                search();
+                
                 break;
             }
             case 2: {
-                cout << "==== 2 - Busca Automática ==== " << endl;
-                clock_t time_start1 = clock();
-                read_line();//função de busca automática
-                clock_t time_end1 = clock();
-                double time_taken1 = double(time_end1 - time_start1) / CLOCKS_PER_SEC;
-                cout << "Tempo de execução: " << time_taken1 << " segundos." << endl;
-                break;
-            }
-            case 3: {
-                cout << "==== 3 - Listar todos os alunos ==== " << endl;
+                cout << "==== 2 - Listar todos os alunos ==== " << endl;
                 print_list();
                 break;
             }
