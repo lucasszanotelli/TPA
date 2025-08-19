@@ -31,26 +31,26 @@ struct Students {
 // Students students; //variável global que define o hashing
 
 struct Hashing{
-    Students students[1000];
+    Students students[1000000];
     int size_hashing;
 };
 Hashing table_hashing;
 
 void initialization(){
-    
-    for (int i = 0; i < 1000; i++){
-        table_hashing.students[i].head = nullptr;
-        table_hashing.students[i].end = nullptr;
+
+    for (int i = 0; i < 1000000; i++){
+        table_hashing.students[i].head = NULL;
+        table_hashing.students[i].end = NULL;
         table_hashing.students[i].size = 0;
     }
 }
 
 bool insert_ordenado(Students *students, Student *new_student) {
-    if (new_student == nullptr) return false;
+    if (new_student == NULL) return false;
 
     // Verificar duplicados no bucket
     Student *current = students->head;
-    while (current != nullptr) {
+    while (current != NULL) {
         if (current->registration == new_student->registration || current->cpf == new_student->cpf) {
             return false;
         }
@@ -58,28 +58,28 @@ bool insert_ordenado(Students *students, Student *new_student) {
     }
 
     // Lista vazia
-    if (students->head == nullptr) {
+    if (students->head == NULL) {
         students->head = students->end = new_student;
-        new_student->previous = new_student->next = nullptr;
+        new_student->previous = new_student->next = NULL;
     }
     // Inserir no início
     else if (new_student->name < students->head->name) {
         new_student->next = students->head;
-        new_student->previous = nullptr;
+        new_student->previous = NULL;
         students->head->previous = new_student;
         students->head = new_student;
     }
     // Inserir no final
     else if (new_student->name >= students->end->name) {
         new_student->previous = students->end;
-        new_student->next = nullptr;
+        new_student->next = NULL;
         students->end->next = new_student;
         students->end = new_student;
     }
     // Inserir no meio
     else {
         current = students->head;
-        while (current != nullptr && new_student->name >= current->name) {
+        while (current != NULL && new_student->name >= current->name) {
             current = current->next;
         }
         new_student->next = current;
@@ -95,6 +95,72 @@ bool insert_ordenado(Students *students, Student *new_student) {
         cout << "Lidos " << table_hashing.size_hashing << " alunos." << endl;
     }
     return true;
+}
+
+bool insert(Students *students, Student *new_student) {
+    if (new_student == NULL) return false;
+
+    // Verificar duplicados no bucket
+    Student *current = students->head;
+    while (current != NULL) {
+        if (current->registration == new_student->registration || current->cpf == new_student->cpf) {
+            return false;
+        }
+        current = current->next;
+    }
+
+    if (students->head == NULL) {
+        students->head = students->end = new_student;
+        new_student->previous = new_student->next = NULL;
+    } else {
+        students->end->next = new_student;
+        new_student->previous = students->end;
+        new_student->next = NULL;
+        students->end = new_student;
+    }
+
+    students->size++;
+    table_hashing.size_hashing++;
+
+    if (table_hashing.size_hashing % 100000 == 0) {
+        cout << "Lidos " << table_hashing.size_hashing << " alunos." << endl;
+    }
+
+    return true;
+}
+
+int compareByname(const void *a, const void *b) {
+    Student *s1 = *(Student **)a;
+    Student *s2 = *(Student **)b;
+    return s1->name.compare(s2->name);
+}
+
+void sort_students_in_hashing(){
+    for(int i = 0; i < table_hashing.size_hashing; i++){
+        Students *students = &table_hashing.students[i];
+        if (students->size <= 1) continue; // Não há nada para ordenar
+
+        Student **array = new Student*[students->size];
+        Student *current = students->head;
+        for (int j = 0; j < students->size; j++) {
+            array[j] = current;
+            current = current->next;
+        }
+
+        qsort(array, students->size, sizeof(Student *), compareByname);
+
+        // Recria a lista encadeada ordenada
+        students->head = array[0];
+        students->end = array[students->size - 1];
+        students->head->previous = NULL;
+        for (int j = 0; j < students->size; j++) {
+            array[j]->next = (j + 1 < students->size) ? array[j + 1] : NULL;
+            if (j > 0) {
+                array[j]->previous = array[j - 1];
+            }
+        }
+        delete[] array;
+    }
 }
 
 int lasts_3_number_for_cpf(Student *student){
@@ -201,7 +267,7 @@ void read_student() {
         if (columns.size() < 7) continue;
 
         Student *new_student = new Student{
-            nullptr, nullptr,
+            NULL, NULL,
             columns[0],
             columns[1],
             columns[2],
@@ -215,7 +281,7 @@ void read_student() {
         // int lasts = lasts_5_number_for_cpf(new_student);
         // int lasts = lasts_6_number_for_cpf(new_student);
 
-        insert_ordenado(&table_hashing.students[lasts], new_student);
+        insert(&table_hashing.students[lasts], new_student);
     }
 
 
@@ -223,36 +289,36 @@ void read_student() {
 }
 
 void remove_student(Student *student){
-    if (student == nullptr) return;
+    if (student == NULL) return;
 
     if (student == table_hashing.students->head && student == table_hashing.students->end) {
         // Removendo o único elemento
-        table_hashing.students->head = table_hashing.students->end = nullptr;
+        table_hashing.students->head = table_hashing.students->end = NULL;
     }
 
     else if (student == table_hashing.students->head) {
         // Removendo o primeiro elemento
         table_hashing.students->head = table_hashing.students->head->next;
-        if (table_hashing.students->head != nullptr) {
-            table_hashing.students->head->previous = nullptr;
+        if (table_hashing.students->head != NULL) {
+            table_hashing.students->head->previous = NULL;
         } else {
-            table_hashing.students->end = nullptr;
+            table_hashing.students->end = NULL;
         }
     }
 
     else if (student == table_hashing.students->end) {
         // Removendo o último elemento
         table_hashing.students->end = table_hashing.students->end->previous;
-        if (table_hashing.students->end != nullptr) {
-            table_hashing.students->end->next = nullptr;
+        if (table_hashing.students->end != NULL) {
+            table_hashing.students->end->next = NULL;
         } else {
-            table_hashing.students->head = nullptr;
+            table_hashing.students->head = NULL;
         }
     }
     else {
         // Removendo um elemento do meio
         student->previous->next = student->next;
-        if (student->next != nullptr) {
+        if (student->next != NULL) {
             student->next->previous = student->previous;
         }
     }
@@ -273,7 +339,7 @@ void print_student(Student *student) {
 void print_list() {
     for (int i = 0; i < table_hashing.size_hashing; i++) { // percorre todos os buckets
         Student *current = table_hashing.students[i].head;
-        while (current != nullptr) { // percorre a lista encadeada dentro do bucket
+        while (current != NULL) { // percorre a lista encadeada dentro do bucket
             print_student(current);
             current = current->next;
         }
@@ -298,7 +364,7 @@ void search(string term) {
     for (int i = 0; i < table_hashing.size_hashing; i++){
 
         Student *current = table_hashing.students[i].head;
-        while (current != nullptr) {
+        while (current != NULL) {
             if (current->name.find(term) != string::npos || current->cpf.find(term) != string::npos) {
                 found = true;
                 print_student(current);
@@ -357,26 +423,9 @@ int main(){
 
     //================ DOCUMENTAÇÃO ===================
     /*
-    HASH DE 1000 - TRÊS ULTIMOS NÚMEROS DO CPF:
-    Tempo de execução: 101.943 segundos.
-    BUSCA AUTOMÁTICA
-    Tempo de execução: 1.932 segundos.
-
-    HASH DE 10000 - QUATRO ÚLTIMOS NÚMEROS DO CPF:
-    Tempo de execução: 16.697 segundos
-    BUSCA AUTOMÁTICA
-    Tempo de execução: 1.9 segundos.
-
-    HASH DE 100000 - CINCO ÚLTIMOS NÚMEROS DO CPF:
-    Tempo de execução: 7.784 segundos.
-    BUSCA AUTOMÁTICA
-    Tempo de execução: 1.931 segundos.
-
-    HASH DE 1000000 - SEIS ÚLTIMOS NÚMEROS DO CPF:
-    Tempo de execução: 6.334 segundos..
-    BUSCA AUTOMÁTICA
-    Tempo de execução: 1.809 segundos.
-
+    ORDENAÇÃO COM QUICK SORT:
+    Tempo de execução: 76.683 segundos.
+    Tempo de execução da ordenação: 0.581 segundos.
     */
 
     //comparar tempos e documentar;
@@ -385,11 +434,16 @@ int main(){
     int time_start = clock();
     initialization();
     read_student();
+    int time_start_ordenad = clock();
+    sort_students_in_hashing();
+    int time_end_ordenad = clock();
     int time_end = clock();
     
     double time_taken = double(time_end - time_start) / CLOCKS_PER_SEC;
-    
+    double time_taken_ordenad = double(time_end_ordenad - time_start_ordenad) / CLOCKS_PER_SEC;
+
     cout << "Tempo de execução: " << time_taken << " segundos." << endl;
+    cout << "Tempo de execução da ordenação: " << time_taken_ordenad << " segundos." << endl;
 
     int option;
     do {
@@ -398,6 +452,7 @@ int main(){
             case 1: {
                 cout << "==== 1 - Buscar aluno ==== " << endl;
                 what_term();
+                
 
                 break;
             }
