@@ -20,36 +20,30 @@ struct Node {
     Node* right;
     int height;
 };
+Node* node = nullptr;
 
-// Função para criar um novo nó
 Node* new_node(Student* new_student) {
-    Node* node = new Node();
-    node->student = new_student;
-    node->left = nullptr;
-    node->right = nullptr;
-    node->height = 1;
-    return node;
+    Node* novo = new Node;
+    novo->student = new_student;
+    novo->left = nullptr;
+    novo->right = nullptr;
+    novo->height = 1;
+    return novo;
 }
 
-// Função para inserir na árvore (ordenada por nome)
 Node* insert_tree(Node* root, Student* new_student) {
     if (root == nullptr) {
         return new_node(new_student);
     }
 
-    if (new_student->name < root->student->name) {
+    if (new_student->name <= root->student->name) {
         root->left = insert_tree(root->left, new_student);
     } else if (new_student->name > root->student->name) {
         root->right = insert_tree(root->right, new_student);
-    } else {
-        // nomes iguais não inserimos
-        return root;
     }
-
     return root;
 }
 
-// Impressão em ordem (alfabética)
 void print_in_order(Node* root) {
     if (root == nullptr) return;
 
@@ -60,18 +54,15 @@ void print_in_order(Node* root) {
     print_in_order(root->right);
 }
 
-// Ler alunos do CSV e montar a árvore
-Node* ler_alunos(const string& filename) {
+void ler_alunos(const string& filename) {
     ifstream file(filename);
     if (!file.is_open()) {
         cerr << "Erro ao abrir o arquivo." << endl;
-        return nullptr;
+        return;
     }
 
     string line;
     getline(file, line); // ignora cabeçalho
-
-    Node* root = nullptr;
 
     while (getline(file, line)) {
         vector<string> colunas;
@@ -95,18 +86,25 @@ Node* ler_alunos(const string& filename) {
             colunas[6]  // city
         };
 
-        root = insert_tree(root, new_student);
+        node = insert_tree(node, new_student);
     }
 
     file.close();
-    return root;
+}
+
+int calcular_altura(Node* root) {
+    if (root == nullptr) return 0;
+    int altura_esq = calcular_altura(root->left);
+    int altura_dir = calcular_altura(root->right);
+    return 1 + max(altura_esq, altura_dir);
 }
 
 int main() {
-    Node* root = ler_alunos("../alunos_teste.csv");
+    ler_alunos("../alunos_completosV2.csv");
 
-    cout << "Alunos em ordem alfabetica:" << endl;
-    print_in_order(root);
+    // cout << "Alunos em ordem alfabetica:" << endl;
+    // print_in_order(node);
+    cout << "Altura da arvore: " << calcular_altura(node) << endl;
 
     return 0;
 }

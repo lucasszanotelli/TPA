@@ -24,56 +24,107 @@ struct Student {
 };
 
 struct Hashing {
-    Student* student[SIZE];  // vetor de ponteiros
-    bool used[SIZE];         // marca se a posição já foi usada
+    vector<Student*> student;  // vetor de ponteiros (dinâmico)
+    vector<bool> used;         // marca se a posição já foi usada (tombstone)
     int size_hashing;
+    int capacity;
 };
 Hashing table_hashing;
 
-unsigned int calc_name(string name) {
+unsigned int calc_name(const string& name) {
     unsigned int soma = 0;
-    for (char c : name) {
-        soma += (int)c; // soma todos os valores ASCII
-    }
-    soma = soma * soma; // eleva ao quadrado
+    for (char c : name) soma += static_cast<unsigned int>(c);
+    soma = soma * soma; // elevando ao quadrado
     return soma;
 }
-void fazer_rehashing(){
-    
+
+bool is_prime(int n) {
+    if (n <= 1) return false;
+    if (n <= 3) return true;
+    if (n % 2 == 0 || n % 3 == 0) return false;
+    for (int i = 5; i * i <= n; i += 6) {
+        if (n % i == 0 || n % (i + 2) == 0) return false;
+    }
+    return true;
+}
+
+int next_prime(int n) {
+    if (n <= 2) return 2;
+    while (!is_prime(n)) n++;
+    return n;
+}
+
+void initialization(int tamanho) {
+    table_hashing.capacity = tamanho;
+    table_hashing.size_hashing = 0;
+    table_hashing.student.assign(tamanho, nullptr);
+    table_hashing.used.assign(tamanho, false);
+}
+
+void fazer_rehashing() {
+    int old_size = table_hashing.capacity;
+    int new_size = next_prime(old_size * 2);
+
+    vector<Student*> new_table(new_size, nullptr);
+    vector<bool> new_used(new_size, false);
+
+    // Reinsere todos os elementos na nova tabela
+    for (int i = 0; i < old_size; i++) {
+        if (table_hashing.student[i] != nullptr) {
+            Student* student = table_hashing.student[i];
+            unsigned int hash = calc_name(student->name) % new_size;
+
+            for (int j = 0; j < new_size; j++) {
+                int pos = (hash + j) % new_size;
+                if (new_table[pos] == nullptr) {
+                    new_table[pos] = student;   // guarda ponteiro
+                    new_used[pos] = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    // Substitui os vetores antigos pelos novos (move para eficiência)
+    table_hashing.student = std::move(new_table);
+    table_hashing.used = std::move(new_used);
+    table_hashing.capacity = new_size;
+
+    cout << "Tabela rehashing concluída! Novo tamanho: " << new_size << endl;
 }
 
 bool insert_hashing(Student *new_student) {
-    if (table_hashing.size_hashing >= (SIZE * 0.66)) {
-        cout << "Fator de carga atingido, fazendo rehasing" << endl;
-        return false;
+    double fator = (double)table_hashing.size_hashing / (double)table_hashing.capacity;
+    if (fator >= 0.66) {
+        cout << "Fator de carga atingido (" << fator << "). Fazendo rehashing..." << endl;
+        fazer_rehashing(); //depois daqui, continua a inserir normalmente
     }
 
-    unsigned int hash = calc_name(new_student->name) % SIZE;
+    unsigned int hash = calc_name(new_student->name) % table_hashing.capacity;
 
-    for (int i = 0; i < SIZE; i++) {
-        int pos = (hash + i) % SIZE;
+    for (int i = 0; i < table_hashing.capacity; i++) {
+        int pos = (hash + i) % table_hashing.capacity;
         if (table_hashing.student[pos] == nullptr) {
             table_hashing.student[pos] = new_student;
-            table_hashing.used[pos] = true; // marca como usado
+            table_hashing.used[pos] = true;
             table_hashing.size_hashing++;
             return true;
         }
     }
-    if(table_hashing.size_hashing % 100 == 0){
-        cout << table_hashing.size_hashing << "Pessoas inseridas" << endl;
-    }
-    return false; // tabela cheia
+
+    return false; 
 }
 
-Student* search_hashing(string nome) {
-    unsigned int hash = calc_name(nome) % SIZE;
+Student* search_hashing(const string& nome) {
+    unsigned int hash = calc_name(nome) % table_hashing.capacity;
 
-    for (int i = 0; i < SIZE; i++) {
-        int pos = (hash + i) % SIZE;
+    for (int i = 0; i < table_hashing.capacity; i++) {
+        int pos = (hash + i) % table_hashing.capacity;
         if (table_hashing.student[pos] == nullptr) {
             if (!table_hashing.used[pos]) {
-                return nullptr; // nunca houve nada aqui -> para
+                return NULL; // nunca houve nada aqui
             }
+            // se used[pos] == true, continui (slot era tombstone)
         } else if (table_hashing.student[pos]->name == nome) {
             return table_hashing.student[pos];
         }
@@ -84,16 +135,26 @@ Student* search_hashing(string nome) {
 void print_student(Student *student) {
     cout << student->registration << " - "
          << student->cpf << " - "
-         << student->name << " - " 
+         << student->name << " - "
          << student->pontuation << " - "
          << student->age << " - "
-         << student->course << " - " 
+         << student->course << " - "
          << student->city << endl;
+}
+
+void print_list() {
+    for (int i = 0; i < table_hashing.capacity; i++) {
+        if (table_hashing.student[i] != nullptr) {
+            print_student(table_hashing.student[i]);
+        }
+    }
 }
 
 void calc_re_hashing(Student *new_student, int dado) {
     if (dado == INSERE) {
-        insert_hashing(new_student);
+        if (!insert_hashing(new_student)) {
+            cerr << "Erro ao inserir aluno: " << new_student->name << endl;
+        }
     } else if (dado == BUSCA) {
         Student *res = search_hashing(new_student->name);
         if (res) {
@@ -108,8 +169,8 @@ void calc_re_hashing(Student *new_student, int dado) {
 void read_student(string arquivo, int dado) {
     ifstream file(arquivo);
     if (!file.is_open()) {
-        cerr << "Erro ao abrir o arquivo." << endl;
-        return; 
+        cerr << "Erro ao abrir o arquivo: " << arquivo << endl;
+        return;
     }
 
     string line;
@@ -142,25 +203,40 @@ void read_student(string arquivo, int dado) {
     file.close();
 }
 
-void initialization() {
-    for (int i = 0; i < SIZE; i++) {
-        table_hashing.student[i] = nullptr;
-        table_hashing.used[i] = false;
-    }
-    table_hashing.size_hashing = 0;
-
-    read_student("../alunos_completosV2.csv", INSERE);
+int menu() {
+    int choice;
+    cout << "Menu:\n";
+    cout << "1. Inserir alunos do arquivo\n";
+    cout << "2. Listar todos os alunos\n";
+    cout << "0. Sair\n";
+    cout << "Escolha uma opção: ";
+    cin >> choice;
+    return choice;
 }
 
 int main() {
     SetConsoleOutputCP(65001); // Define UTF-8 no console
-    
-    int time_start = clock();
-    initialization();
-    int time_end = clock();
-    
-    double time_taken = double(time_end - time_start) / CLOCKS_PER_SEC;
-    cout << "Tempo de execução: " << time_taken << " segundos." << endl;
+    initialization(SIZE); // inicia com SIZE (1021) mas pode crescer
+    int option;
+    do {
+        option = menu();
+        switch (option) {
+            case 1:
+                cout << "==== Inserindo alunos do arquivo ==== " << endl;
+                read_student("../alunos_completosV2.csv", INSERE);
+                cout << "Alunos inseridos com sucesso! Qtd Alunos: " << table_hashing.size_hashing << endl;
+                break;
+            case 2:
+                cout << "==== Listando todos os alunos ==== " << endl;
+                print_list();
+                break;
+            case 0:
+                cout << "\nSaindo..." << endl;
+                break;
+            default:
+                cout << "\nOpção inválida." << endl;
+        }
+    } while (option != 0);
 
     return 0;
 }
