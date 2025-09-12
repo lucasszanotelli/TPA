@@ -31,7 +31,7 @@ struct Students {
 // Students students; //variável global que define o hashing
 
 struct Hashing{
-    Students students[1000000];
+    Students students[100];
     int size_hashing;
 };
 Hashing table_hashing;
@@ -177,6 +177,26 @@ int lasts_6_number_for_cpf(Student *student){
 
 }
 
+int lasts_2_number_for_cpf(Student *student){
+    string numbers;//variável que receberá a string inteira do cpf com apenas os números
+
+    // Remove pontos e traços
+    for (char c : student->cpf) {
+        if (isdigit(static_cast<unsigned char>(c))) {
+            numbers.push_back(c);
+        }
+    }
+    if (numbers.size() < 2) {
+        cerr << "CPF inválido: " << student->cpf << endl;
+        return -1;
+    }
+
+    string last = numbers.substr(numbers.size() - 2);
+
+    return atoi(last.c_str());
+
+}
+
 void read_student() {
     ifstream file("../alunos_completosV2.csv");
     if (!file.is_open()) {
@@ -210,10 +230,12 @@ void read_student() {
             columns[5],
             columns[6]
         };
+        int lasts = lasts_2_number_for_cpf(new_student);
         // int lasts = lasts_3_number_for_cpf(new_student);
         // int lasts = lasts_4_number_for_cpf(new_student);
         // int lasts = lasts_5_number_for_cpf(new_student);
-        int lasts = lasts_6_number_for_cpf(new_student);
+        // int lasts = lasts_6_number_for_cpf(new_student);
+
 
         insert_ordenado(&table_hashing.students[lasts], new_student);
     }

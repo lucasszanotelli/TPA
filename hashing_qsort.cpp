@@ -129,7 +129,7 @@ bool insert(Students *students, Student *new_student) {
     return true;
 }
 
-int compareByname(const void *a, const void *b) {
+int compare_by_name(const void *a, const void *b) {
     Student *s1 = *(Student **)a;
     Student *s2 = *(Student **)b;
     return s1->name.compare(s2->name);
@@ -147,7 +147,7 @@ void sort_students_in_hashing(){
             current = current->next;
         }
 
-        qsort(array, students->size, sizeof(Student *), compareByname);
+        qsort(array, students->size, sizeof(Student *), compare_by_name);
 
         // Recria a lista encadeada ordenada
         students->head = array[0];
