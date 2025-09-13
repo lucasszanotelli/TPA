@@ -57,7 +57,7 @@ int next_prime(int n) {
 void initialization(int tamanho) {
     table_hashing.capacity = tamanho;
     table_hashing.size_hashing = 0;
-    table_hashing.student.assign(tamanho, nullptr);
+    table_hashing.student.assign(tamanho, NULL);
     table_hashing.used.assign(tamanho, false);
 }
 
@@ -65,18 +65,18 @@ void fazer_rehashing() {
     int old_size = table_hashing.capacity;
     int new_size = next_prime(old_size * 2);
 
-    vector<Student*> new_table(new_size, nullptr);
+    vector<Student*> new_table(new_size, NULL);
     vector<bool> new_used(new_size, false);
 
     // Reinsere todos os elementos na nova tabela
     for (int i = 0; i < old_size; i++) {
-        if (table_hashing.student[i] != nullptr) {
+        if (table_hashing.student[i] != NULL) {
             Student* student = table_hashing.student[i];
             unsigned int hash = calc_name(student->name) % new_size;
 
             for (int j = 0; j < new_size; j++) {
                 int pos = (hash + j) % new_size;
-                if (new_table[pos] == nullptr) {
+                if (new_table[pos] == NULL) {
                     new_table[pos] = student;   // guarda ponteiro
                     new_used[pos] = true;
                     break;
@@ -104,7 +104,7 @@ bool insert_hashing(Student *new_student) {
 
     for (int i = 0; i < table_hashing.capacity; i++) {
         int pos = (hash + i) % table_hashing.capacity;
-        if (table_hashing.student[pos] == nullptr) {
+        if (table_hashing.student[pos] == NULL) {
             table_hashing.student[pos] = new_student;
             table_hashing.used[pos] = true;
             table_hashing.size_hashing++;
@@ -120,7 +120,7 @@ Student* search_hashing(const string& nome) {
 
     for (int i = 0; i < table_hashing.capacity; i++) {
         int pos = (hash + i) % table_hashing.capacity;
-        if (table_hashing.student[pos] == nullptr) {
+        if (table_hashing.student[pos] == NULL) {
             if (!table_hashing.used[pos]) {
                 return NULL; // nunca houve nada aqui
             }
@@ -129,7 +129,7 @@ Student* search_hashing(const string& nome) {
             return table_hashing.student[pos];
         }
     }
-    return nullptr;
+    return NULL;
 }
 
 void print_student(Student *student) {
@@ -144,7 +144,7 @@ void print_student(Student *student) {
 
 void print_list() {
     for (int i = 0; i < table_hashing.capacity; i++) {
-        if (table_hashing.student[i] != nullptr) {
+        if (table_hashing.student[i] != NULL) {
             print_student(table_hashing.student[i]);
         }
     }
@@ -203,11 +203,42 @@ void read_student(string arquivo, int dado) {
     file.close();
 }
 
+void search(const string& dado) {
+    bool encontrou = false;
+    
+    for (int i = 0; i < table_hashing.capacity; i++) {
+        
+        if (table_hashing.student[i] != NULL){
+            if (table_hashing.student[i]->name == dado){
+                encontrou = true;
+                cout << "Estudante encontrado" << endl;
+                print_student(table_hashing.student[i]);
+                break; 
+
+            }else if(table_hashing.student[i] == NULL && table_hashing.used[i] == true){
+                cout <<"Esse estudante já existiu em algum momento";
+                break;
+            }
+        }
+    }
+    if (!encontrou) {
+        cout << "\nNenhum aluno encontrado com o termo fornecido.\n\n";
+    }
+}
+
+void what_term(){
+    string term;
+    cout << "\nDigite o termo de busca (CPF ou Nome): ";
+    cin.ignore();
+    getline(cin, term);  // Permite nomes com espaços
+    search(term);
+}
 int menu() {
     int choice;
     cout << "Menu:\n";
     cout << "1. Inserir alunos do arquivo\n";
     cout << "2. Listar todos os alunos\n";
+    cout << "3. Buscar aluno por nome\n";
     cout << "0. Sair\n";
     cout << "Escolha uma opção: ";
     cin >> choice;
@@ -229,6 +260,10 @@ int main() {
             case 2:
                 cout << "==== Listando todos os alunos ==== " << endl;
                 print_list();
+                break;
+            case 3:
+                cout << "==== Buscar alunos por nome" << endl;
+                what_term();
                 break;
             case 0:
                 cout << "\nSaindo..." << endl;
