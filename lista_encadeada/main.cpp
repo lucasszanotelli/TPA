@@ -6,6 +6,7 @@
 #include <vector>
 #include <sstream>
 #include <windows.h> // Para SetConsoleOutputCP
+#include <time.h>
 using namespace std;
 
 struct Aluno {
@@ -85,7 +86,7 @@ bool insert_ordenado(Aluno *new_student) {
 }
 
 void ler_aluno() {
-    ifstream file("../alunos_teste.csv");
+    ifstream file("../alunos_completosV2.csv");
     if (!file.is_open()) {
         cerr << "Erro ao abrir o arquivo." << endl;
         return;
@@ -118,10 +119,11 @@ void ler_aluno() {
             colunas[6]
         };
 
-        int last2 = stoi(new_student->cpf.substr(new_student->cpf.size() - 2));
-
         //insert_normal(new_student);
         insert_ordenado(new_student);
+        if(students.size%100 == 0){
+            cout << "Nº inseridos : " << students.size << endl;
+        }
     }
 
     file.close();
@@ -229,9 +231,15 @@ void search() {
 
 int main(){
     SetConsoleOutputCP(65001); // Define a codificação UTF-8 para o console
+    int time_start = clock();
     inicializa();
+    
     ler_aluno();
-    print_list();
+    int time_end = clock();
+    double time_taken = double(time_end - time_start) / CLOCKS_PER_SEC;
+    
+    cout << "Tempo de execução: " << time_taken << " segundos." << endl;
+
 
     int option;  
     do{

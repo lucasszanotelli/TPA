@@ -8,6 +8,7 @@
 #include <windows.h> // Para SetConsoleOutputCP
 #include <time.h>
 using namespace std;
+#define SIZE 10000
 
 struct Student {
     Student *previous;
@@ -31,14 +32,14 @@ struct Students {
 // Students students; //variável global que define o hashing
 
 struct Hashing{
-    Students students[100];
+    Students students[SIZE];
     int size_hashing;
 };
 Hashing table_hashing;
 
 void initialization(){
     
-    for (int i = 0; i < 100; i++){
+    for (int i = 0; i < SIZE; i++){
         table_hashing.students[i].head = nullptr;
         table_hashing.students[i].end = nullptr;
         table_hashing.students[i].size = 0;
