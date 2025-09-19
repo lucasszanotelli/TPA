@@ -6,6 +6,10 @@
 using namespace std;
 #define SIZE 1048576
 
+#define EXCLUI 0
+#define BUSCA 1
+
+
 struct Student {
     string registration;
     string cpf;
@@ -94,16 +98,49 @@ void ler_csv(const string& arq){
     }
 
 }
-bool remove_aluno(string termo){
-    int i =0;
-    if (termo == NULL){
+string what_termo(int modo){
+    string perg, termo;
+    if(modo == 1){
+        perg = "buscar: ";
+    }else if(modo == 0){
+        perg = "excluir: ";
+    }
+    cout << "Digite o termo que deseja "<< perg;
+    cin >> termo;
+
+    return termo;
+}
+
+Node buscar(const string& busca, Node* no){
+    if(no == NULL){
+        cout << "Nó vazio"<<endl;
+        return;
+    }
+    if(busca == node->student[0]->name){
+        cout << "Encontrado na posição 0" << endl;
+        return 0;
+    }
+}
+
+bool remove_aluno(){
+    int i;
+    string termo = what_termo(EXCLUI);
+    if (termo.empty()){
         cout<<"impossível excluir. Termo vazio!"<<endl;
         return false;
     }
-    while(termo != node->student[i]->name){
+    for(i=0; i<SIZE; i++){
+        if(node->student[i] != nullptr && node->student[i]->name == termo){
+            cout << "Aluno encontrado: "<< node->student[i]->name << endl;
 
+            delete node->student[i];
+            node->student[i] = nullptr;
+            cout << "Aluno removido com sucesso!" << endl;
+        }else{
+            cout << "Aluno não encontrado"<<endl;
+            return false;
+        }
     }
-
     return true;
 
 }
@@ -140,9 +177,7 @@ int main(){
             case 1: {
                 cout << "==== 1 - Inserindo alunos ==== " << endl;
                 inicializa();
-                ler_csv("../alunos_completosV2.csv");
-
-                
+                ler_csv("../../arquivos/alunos_completosV2.csv");
                 break;
             }
             case 2:
@@ -153,6 +188,10 @@ int main(){
                 cout << "==== 3 - Alunos inseridos ==== " << endl;
                 cout << "QTD alunos inseridos: " << node->qtd<< endl;
                 break;
+            case 4:
+                cout << "==== 4 - Remover Aluno por nome ====" << endl;
+                remove_aluno();
+                
             case 0:
                 cout << "\nSaindo..." << endl;
                 break;

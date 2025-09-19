@@ -178,7 +178,7 @@ int lasts_6_number_for_cpf(Student *student){
 }
 
 void read_student() {
-    ifstream file("../alunos_completosV2.csv");
+    ifstream file("../../arquivos/alunos_completosV2.csv");
     if (!file.is_open()) {
         cerr << "Erro ao abrir o arquivo." << endl;
         return; 
@@ -323,7 +323,7 @@ void what_term(){
 }
 
 void read_line() {
-    ifstream file("../busca_10_alunos.csv");
+    ifstream file("../../arquivos/busca_10_alunos.csv");
     if (!file.is_open()) {
         cerr << "Erro ao abrir o arquivo de busca." << endl;
         return; 

@@ -254,7 +254,7 @@ int main() {
         switch (option) {
             case 1:
                 cout << "==== Inserindo alunos do arquivo ==== " << endl;
-                read_student("../alunos_completosV2.csv", INSERE);
+                read_student("../../arquivos/alunos_completosV2.csv", INSERE);
                 cout << "Alunos inseridos com sucesso! Qtd Alunos: " << table_hashing.size_hashing << endl;
                 break;
             case 2:

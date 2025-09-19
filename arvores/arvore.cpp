@@ -12,6 +12,7 @@ struct Student {
     int age;
     string course;
     string city;
+
 };
 
 struct Node {
@@ -100,7 +101,7 @@ int calcular_altura(Node* root) {
 }
 
 int main() {
-    ler_alunos("../alunos_completosV2.csv");
+    ler_alunos("../../arquivos/alunos_completosV2.csv");
 
     // cout << "Alunos em ordem alfabetica:" << endl;
     // print_in_order(node);

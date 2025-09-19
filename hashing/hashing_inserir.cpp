@@ -198,7 +198,7 @@ int lasts_2_number_for_cpf(Student *student){
 }
 
 void read_student() {
-    ifstream file("../alunos_completosV2.csv");
+    ifstream file("../../arquivos/alunos_completosV2.csv");
     if (!file.is_open()) {
         cerr << "Erro ao abrir o arquivo." << endl;
         return; 

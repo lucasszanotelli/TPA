@@ -86,7 +86,7 @@ bool insert_ordenado(Aluno *new_student) {
 }
 
 void ler_aluno() {
-    ifstream file("../alunos_completosV2.csv");
+    ifstream file("../../arquivos/alunos_completosV2.csv");
     if (!file.is_open()) {
         cerr << "Erro ao abrir o arquivo." << endl;
         return;
