@@ -51,8 +51,6 @@ bool insere_vetor(Student* aluno, Node* no, int indice){
         int dir = 2 * indice + 2;
         return insere_vetor(aluno, no, dir);
     }
-
-    node->qtd ++;
     return true;
 }
 
@@ -94,9 +92,8 @@ void ler_csv(const string& arq){
             cout << "Vetor cheio, não foi possível inserir o aluno: " << new_student->name << endl;
             break;
         }
-
+        node->qtd++;
     }
-
 }
 string what_termo(int modo){
     string perg, termo;
@@ -105,45 +102,49 @@ string what_termo(int modo){
     }else if(modo == 0){
         perg = "excluir: ";
     }
-    cout << "Digite o termo que deseja "<< perg;
-    cin >> termo;
+    cout << "Digite o termo que deseja " << perg;
+    getline(cin >> ws, termo);
 
     return termo;
 }
 
-Node buscar(const string& busca, Node* no){
-    if(no == NULL){
-        cout << "Nó vazio"<<endl;
-        return;
-    }
-    if(busca == node->student[0]->name){
-        cout << "Encontrado na posição 0" << endl;
-        return 0;
-    }
-}
-
-bool remove_aluno(){
-    int i;
-    string termo = what_termo(EXCLUI);
-    if (termo.empty()){
-        cout<<"impossível excluir. Termo vazio!"<<endl;
-        return false;
-    }
-    for(i=0; i<SIZE; i++){
-        if(node->student[i] != nullptr && node->student[i]->name == termo){
-            cout << "Aluno encontrado: "<< node->student[i]->name << endl;
-
-            delete node->student[i];
-            node->student[i] = nullptr;
-            cout << "Aluno removido com sucesso!" << endl;
+bool remove_aluno(int indice_excluir){
+    char res;
+    if(indice_excluir == -1){
+        cout << "Termo não encontrado" << endl;
+    }else{
+        cout << "Deseja mesmo exluir "<<node->student[indice_excluir]->name <<" ? S/N" << endl;
+        cin >> res;
+        if(tolower(res) == 'n'){
+            cout << "operação cancelada"<<endl;
         }else{
-            cout << "Aluno não encontrado"<<endl;
-            return false;
-        }
+            delete node->student[indice_excluir];
+            node->student[indice_excluir] = NULL;
+            node->qtd --;
+            cout << "aluno excuido"<<endl;
+        }         
     }
     return true;
-
 }
+
+int buscar(const string& busca, int indice) {
+    if (node->student[indice] == NULL || indice >= SIZE) {
+        return -1;
+    }
+    if (busca == node->student[indice]->name) {
+        cout << "Encontrado na posição [" << indice <<"]" << endl;
+        return remove_aluno(indice);
+    } 
+    else if (busca < node->student[indice]->name) {
+        int esq = 2 * indice + 1;
+        return buscar(busca, esq);
+    } 
+    else { 
+        int dir = 2 * indice + 2;
+        return buscar(busca, dir);
+    }
+}
+
 void print_alunos(Node* no, int indice){
     if(indice >= SIZE || no->student[indice] == NULL){
         return;
@@ -157,9 +158,10 @@ void print_alunos(Node* no, int indice){
 
 int menu(){
     cout << " ==== Menu: ==== \n" << endl;
-    cout << "1 - inserir aluno" << endl
+    cout << "1 - Inserir aluno" << endl
          << "2 - Listar todos os alunos" << endl
          << "3 - Quantidade de alunos inseridos" << endl
+         << "4 - Buscar aluno por nome"<<endl
          << "0 - Sair" << endl
          << "\nOpção: ";
 
@@ -171,13 +173,14 @@ int menu(){
 int main(){
     SetConsoleOutputCP(65001);
     int opcao;
+    string termo;
     do{
         opcao = menu();
         switch (opcao) {
             case 1: {
                 cout << "==== 1 - Inserindo alunos ==== " << endl;
                 inicializa();
-                ler_csv("../../arquivos/alunos_completosV2.csv");
+                ler_csv("../../arquivos/busca_10_alunos.csv");
                 break;
             }
             case 2:
@@ -189,9 +192,10 @@ int main(){
                 cout << "QTD alunos inseridos: " << node->qtd<< endl;
                 break;
             case 4:
-                cout << "==== 4 - Remover Aluno por nome ====" << endl;
-                remove_aluno();
-                
+                cout << "==== 4 - Buscar alunos ====" << endl;
+                termo = what_termo(BUSCA);
+                buscar(termo, 0);
+                break;   
             case 0:
                 cout << "\nSaindo..." << endl;
                 break;
