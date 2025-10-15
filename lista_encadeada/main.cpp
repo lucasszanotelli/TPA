@@ -27,7 +27,6 @@ struct Alunos {
     Aluno *end;
     int size;
 };
-
 Alunos students; // variável global
 
 void inicializa() {
@@ -39,7 +38,6 @@ void inicializa() {
 bool insert_ordenado(Aluno *new_student) {
     if (new_student == nullptr) return false;
 
-    
     if (students.head == nullptr) {
         students.head = students.end = new_student;
         new_student->ante = new_student->prox = nullptr;
@@ -191,7 +189,7 @@ void remove_student(Aluno *student){
         student->ante->prox = student->prox;
         if (student->prox != nullptr) {
             student->prox->ante = student->ante;
-        }
+        } 
     }
     delete student;
     students.size--;

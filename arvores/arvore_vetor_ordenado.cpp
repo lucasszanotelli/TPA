@@ -17,27 +17,26 @@ struct Student {
     int age;
     string course;
     string city;
+    int altura_no;
+    int altura_arvore;
 };
-
-struct Node {
-    Student* student[SIZE];
-    int qtd;
-};
-Node* node = NULL;
+Student* node[SIZE] = NULL;
 
 bool insere_vetor(Student* aluno, int indice, int alt){
     if (indice >= SIZE){
         return false;// arvore cheia
     }
-    if(node->student[indice] == NULL){
-        node->student[indice] = aluno;
+    if(student[indice] == NULL){
+        student[indice] = aluno;
+        tudent[indice]->altura_no = alt;
+        cout << "altura do nó inserido: "<< student[indice]->altura_no << endl;
 
-    }else if (node->student[indice]->name > aluno->name){
+    }else if (student[indice]->name > aluno->name){
         int esq = 2 * indice + 1;
         alt += 1;
         return insere_vetor(aluno, esq, alt);
 
-    }else if (node->student[indice]->name < aluno->name){
+    }else if (student[indice]->name < aluno->name){
         int dir = 2 * indice + 2;
         alt += 1; //adiciona 1 para saber a altura do nó inserido
         return insere_vetor(aluno, dir, alt);
@@ -76,6 +75,7 @@ void ler_csv(const string& arq){
             stoi(colunas[4]), //idade
             colunas[5], //curso
             colunas[6], //cidade
+            0 //altura do nó  
         };
 
         insere_vetor(new_student, 0, 1);
@@ -83,36 +83,55 @@ void ler_csv(const string& arq){
             cout << "Vetor cheio, não foi possível inserir o aluno: " << new_student->name << endl;
             break;
         }
-        node->qtd++;
+        qtd++;
     }
 }
-string what_termo(int modo){
-    string perg, termo;
-    if(modo == 1){
-        perg = "buscar: ";
-    }else if(modo == 0){
-        perg = "excluir: ";
-    }
-    cout << "Digite o termo que deseja " << perg;
-    getline(cin >> ws, termo);
 
-    return termo;
+int buscar_menor(int indice_menor){
+    if (student[indice_menor]!= NULL){
+        return buscar_menor(indice_menor*2+1);
+    }
+    return indice_menor;
 }
 
+bool remove_balanceando(int indice_excluir){
+    char res;
+    int esq = indice_excluir*2 + 1;
+    int dir = indice_excluir*2 + 2;
+
+    if(indice_excluir == -1){
+        cout << "Termo não encontrado" << endl;
+        return false;
+    }
+    if (student[esq]==NULL && student[dir]==NULL){
+        delete student[indice_excluir];
+        return true;
+    }else{
+        int menor = buscar_menor(indice_excluir);
+        if(student[menor*2 + 2] != NULL){
+            student[indice_excluir] = student[menor];
+            delete student[menor];
+            return true;
+        }
+    }
+
+    return true;
+
+}
 
 bool remove_aluno_simples(int indice_excluir){
     char res;
     if(indice_excluir == -1){
         cout << "Termo não encontrado" << endl;
     }else{
-        cout << "Deseja mesmo exluir "<<node->student[indice_excluir]->name <<" ? S/N" << endl;
+        cout << "Deseja mesmo exluir "<<student[indice_excluir]->name <<" ? S/N" << endl;
         cin >> res;
         if(tolower(res) == 'n'){
             cout << "operação cancelada"<<endl;
         }else{
-            delete node->student[indice_excluir];
-            node->student[indice_excluir] = NULL;
-            node->qtd --;
+            delete student[indice_excluir];
+            student[indice_excluir] = NULL;
+            qtd --;
             cout << "aluno excuido"<<endl;
         }         
     }
@@ -120,14 +139,14 @@ bool remove_aluno_simples(int indice_excluir){
 }
 
 int buscar(const string& busca, int indice) {
-    if (node->student[indice] == NULL || indice >= SIZE) {
+    if (student[indice] == NULL || indice >= SIZE) {
         return -1;
     }
-    if (busca == node->student[indice]->name) {
+    if (busca == student[indice]->name) {
         cout << "Encontrado na posição [" << indice <<"]" << endl;
         return remove_aluno_simples(indice);
     } 
-    else if (busca < node->student[indice]->name) {
+    else if (busca < student[indice]->name) {
         int esq = 2 * indice + 1;
         return buscar(busca, esq);
     } 
@@ -154,6 +173,7 @@ int menu(){
          << "2 - Listar todos os alunos" << endl
          << "3 - Quantidade de alunos inseridos" << endl
          << "4 - Buscar aluno por nome"<<endl
+         << "5 - Altura da árvore"<< endl
          << "0 - Sair" << endl
          << "\nOpção: ";
 
@@ -164,7 +184,8 @@ int menu(){
 
 int main(){
     SetConsoleOutputCP(65001);
-    int opcao;
+    inicializa();
+    int opcao, alt;
     string termo;
     do{
         opcao = menu();
@@ -180,13 +201,18 @@ int main(){
                 break;
             case 3:
                 cout << "==== 3 - Alunos inseridos ==== " << endl;
-                cout << "QTD alunos inseridos: " << node->qtd<< endl;
+                cout << "QTD alunos inseridos: " << qtd<< endl;
                 break;
             case 4:
                 cout << "==== 4 - Buscar alunos ====" << endl;
                 termo = what_termo(BUSCA);
                 buscar(termo, 0);
                 break; 
+            case 5:
+                cout <<"==== 5 - Altura: ===="<<endl;
+                alt = get_atura_arvore();
+                cout <<"Altura: "<< alt <<endl;
+
             case 0:
                 cout << "\nSaindo..." << endl;
                 break;

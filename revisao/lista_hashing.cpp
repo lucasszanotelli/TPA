@@ -29,16 +29,14 @@ struct Students {
     int size;
 };
 
-// Students students; //variável global que define o hashing
-
+//é um vetor que armazena uma estrutura de lista em cada ponta
 struct Hashing{
     Students students[SIZE];
     int size_hashing;
 };
 Hashing table_hashing;
 
-void initialization(){
-    
+void initialization(){//inicializa a hashing 
     for (int i = 0; i < SIZE; i++){
         table_hashing.students[i].head = nullptr;
         table_hashing.students[i].end = nullptr;
@@ -49,7 +47,7 @@ void initialization(){
 bool insert_ordenado(Students *students, Student *new_student) {
     if (new_student == nullptr) return false;
 
-    // Verificar duplicados no bucket
+
     Student *current = students->head;
     while (current != nullptr) {
         if (current->registration == new_student->registration || current->cpf == new_student->cpf) {
@@ -99,7 +97,7 @@ bool insert_ordenado(Students *students, Student *new_student) {
 }
 
 void read_student() {
-    ifstream file("../../arquivos/alunos_teste.csv");
+    ifstream file("../../arquivos/alunos_completosV2.csv");
     if (!file.is_open()) {
         cerr << "Erro ao abrir o arquivo." << endl;
         return;
@@ -131,103 +129,22 @@ void read_student() {
             columns[5],
             columns[6]
         };
-        int lasts2 = stoi(new_student->cpf.substr(12, 2));
+        int lasts2 = stoi(new_student->cpf.substr(12, 2)); //separa os dois últimos dígitos do CPF
 
-        insert_ordenado(&table_hashing.students[lasts2], new_student);    
+        insert_ordenado(&table_hashing.students[lasts2], new_student);
     }
     file.close();
 }
 
-void remove_student(string termo){
-    if (termo.empty()) return;
-
-    for (int i = 0; i < SIZE; i++) {
-        Student *atual = table_hashing.students[i].head;
-
-        while (atual != nullptr) {
-            if (atual->name == termo) {
-                // se for o primeiro da lista
-                if (atual == table_hashing.students[i].head) {
-                    table_hashing.students[i].head = atual->next;
-                } else {
-                    // se não for o primeiro, ajusta o anterior
-                    Student *anterior = table_hashing.students[i].head;
-                    while (anterior->next != atual) {
-                        anterior = anterior->next;
-                    }
-                    anterior->next = atual->next;
-                }
-
-                delete atual; // libera memória
-                return; // já encontrou e removeu
-            }
-            atual = atual->next;
-        }
-    }
-}
-
-void print_student(Student *student) {
-    cout << student->registration << " - "
-         << student->cpf << " - "
-         << student->name << " - " 
-         << student->pontuation << " - "
-         << student->age << " - "
-         << student->course << " - " 
-         << student->city << endl;
-}
-
-void print_list() {
-    for(int i =0; i<SIZE; i++){
-        Student *atual = table_hashing.students[i].head;
-        while(atual != NULL){
-            print_student(atual);
-            atual = atual->next;
-        }
-    }
-}
 
 int menu() {
     cout << " ==== Menu: ==== \n" << endl;
     cout << "1 - Buscar aluno" << endl
-         << "2 - lista alunos" << endl
-         << "3 - excluir aluno" << endl
          << "0 - Sair" << endl
          << "\nOpção: ";
-
     int opcao;
     cin >> opcao;
     return opcao;
-}
-
-void search() {
-    string term;
-    int option;
-    bool found = false;
-
-    cout << "\nDigite o termo de busca (CPF ou Nome): ";
-    cin.ignore();
-    getline(cin, term);  // Permite nomes com espaços
-
-    Student *current = table_hashing.students->head;
-    while (current != nullptr) {
-        if (current->name.find(term) != string::npos || current->cpf.find(term) != string::npos) {
-            found = true;
-            print_student(current);
-            cout << "\nDigite 1 para remover esse aluno, qualquer outra tecla para continuar: ";
-            cin >> option;
-            if (option == 1) {
-                string to_remove = current->name;
-                current = current->next;  // Avança antes de remover
-                remove_student(to_remove);
-                continue;  // Pula o incremento normal
-            }
-        }
-        current = current->next;
-    }
-
-    if (!found) {
-        cout << "\nNenhum aluno encontrado com o termo fornecido.\n\n";
-    }
 }
 
 int main(){
@@ -243,27 +160,17 @@ int main(){
     cout << "Tempo de execução: " << time_taken << " segundos." << endl;
 
     int option;
-    string termo;
     do {
         option = menu();
         switch (option) {
             case 1: {
-                cout << "==== 1 - Buscar aluno ==== " << endl;
-                search();
+                cout << "==== 1 - Buscar aluno ==== " << endl;''
                 break;
             }
             case 2: {
                 cout << "==== 2 - Listar todos os alunos ==== " << endl;
-                print_list();
                 break;
             }
-            case 3:
-                cout<<"==== 3 - Excluir aluno ====" << endl;
-                cout<<"Digite o nome que deseja excluir: " << endl;
-                getline(cin>>ws, termo);
-                remove_student(termo);
-                break;
-
             case 0:
                 cout << "\nSaindo..." << endl;
                 break;
