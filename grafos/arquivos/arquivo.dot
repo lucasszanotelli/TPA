@@ -4,8 +4,8 @@ digraph exemplo {
     C;
     D;
     E;
-    A -> B;
-    B -> C;
-    C -> D;
+    A -- B;
+    B -- C;
+    C -- D;
 
 }
