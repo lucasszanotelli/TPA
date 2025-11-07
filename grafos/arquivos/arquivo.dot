@@ -1,4 +1,4 @@
-digraph exemplo {
+graph exemplo {
     A;
     B;
     C;

@@ -4,20 +4,16 @@
 #include <vector>
 #include <string>
 #include <algorithm>
-#include <windows.h>
 #include <stack>
 #include <ctime>
+#include <windows.h>
 
 using namespace std;
 
-struct Matriz {
-    vector<vector<int>> matriz; // matriz dinâmica de adjacência
-};
-
 struct Grafo {
     vector<string> vertices;               // lista de vértices
-    vector<pair<string, string>> arestas;  // lista de arestas (pares de vértices)
-    Matriz *matriz = nullptr;              // ponteiro para a matriz
+    vector<pair<string, string>> arestas;  // lista de arestas
+    vector<vector<int>> lista_adj;         // lista de adjacência
     bool direcionado = false;
     int qtd_arestas = 0;
 };
@@ -31,6 +27,7 @@ string trim(const string &str) {
 }
 
 // Função para ler o arquivo DOT e preencher o grafo
+//lerArquivoDOT("../arquivos/arquivo.dot", grafo);
 void lerArquivoDOT(const string &nomeArquivo, Grafo *grafo) {
     ifstream arquivo(nomeArquivo);
     string linha;
@@ -42,6 +39,7 @@ void lerArquivoDOT(const string &nomeArquivo, Grafo *grafo) {
 
     grafo->vertices.clear();
     grafo->arestas.clear();
+    grafo->lista_adj.clear();
 
     while (getline(arquivo, linha)) {
         linha = trim(linha);
@@ -54,13 +52,10 @@ void lerArquivoDOT(const string &nomeArquivo, Grafo *grafo) {
             string v1, ignore, v2;
             ss >> v1 >> ignore >> v2;
 
-            if (ignore == "->") {
+            if (ignore == "->")
                 grafo->direcionado = true;
-                grafo->arestas.push_back({v1, v2});
-            } else {
-                grafo->arestas.push_back({v1, v2});
-            }
 
+            grafo->arestas.push_back({v1, v2});
             grafo->vertices.push_back(v1);
             grafo->vertices.push_back(v2);
         } else {
@@ -73,13 +68,29 @@ void lerArquivoDOT(const string &nomeArquivo, Grafo *grafo) {
     // Remove duplicatas
     sort(grafo->vertices.begin(), grafo->vertices.end());
     grafo->vertices.erase(unique(grafo->vertices.begin(), grafo->vertices.end()), grafo->vertices.end());
+
+    // Cria a lista de adjacência vazia
+    int n = grafo->vertices.size();
+    grafo->lista_adj.assign(n, vector<int>());
+
+    // Preenche a lista de adjacência
+    for (auto &a : grafo->arestas) {
+        int i = find(grafo->vertices.begin(), grafo->vertices.end(), a.first) - grafo->vertices.begin();
+        int j = find(grafo->vertices.begin(), grafo->vertices.end(), a.second) - grafo->vertices.begin();
+        if (i < n && j < n) {
+            grafo->lista_adj[i].push_back(j);
+            if (!grafo->direcionado)
+                grafo->lista_adj[j].push_back(i);
+        }
+    }
 }
 
+// Função para verificar se o grafo é conexo
 bool ehConexo(Grafo *grafo) {
-    int size = grafo->vertices.size();
-    if (size == 0) return true;
+    int n = grafo->vertices.size();
+    if (n == 0) return true;
 
-    vector<bool> visitado(size, false);
+    vector<bool> visitado(n, false);
     stack<int> s;
 
     s.push(0);
@@ -88,10 +99,10 @@ bool ehConexo(Grafo *grafo) {
     while (!s.empty()) {
         int v = s.top();
         s.pop();
-        for (int i = 0; i < size; i++) {
-            if (grafo->matriz->matriz[v][i] != 0 && !visitado[i]) {
-                visitado[i] = true;
-                s.push(i);
+        for (int viz : grafo->lista_adj[v]) {
+            if (!visitado[viz]) {
+                visitado[viz] = true;
+                s.push(viz);
             }
         }
     }
@@ -102,27 +113,20 @@ bool ehConexo(Grafo *grafo) {
     return true;
 }
 
-void imprime_matriz(Grafo *grafo, int size) {
-    cout << "\nMatriz de Adjacência:\n   ";
-    for (auto &v : grafo->vertices)
-        cout << v << " ";
-    cout << endl;
-
-    for (int i = 0; i < size; i++) {
-        cout << grafo->vertices[i] << " ";
-        for (int j = 0; j < size; j++) {
-            cout << " " << grafo->matriz->matriz[i][j];
-        }
+// Função para imprimir a lista de adjacência
+void imprime_lista(Grafo *grafo) {
+    cout << "\nLista de Adjacência:\n";
+    for (int i = 0; i < (int)grafo->vertices.size(); i++) {
+        cout << grafo->vertices[i] << " -> ";
+        for (int viz : grafo->lista_adj[i])
+            cout << grafo->vertices[viz] << " ";
         cout << endl;
     }
 }
 
+ // Salvar o grafo en arquivo .dot
 void salvarGrafoEmDOT(Grafo *grafo, const string &nomeArquivo) {
-    if (grafo->matriz == nullptr) {
-        cout << "Erro: o grafo ainda não foi criado!\n";
-        return;
-    }
-
+    
     ofstream arquivo(nomeArquivo);
     if (!arquivo.is_open()) {
         cout << "Erro ao abrir o arquivo " << nomeArquivo << " para escrita.\n";
@@ -134,124 +138,87 @@ void salvarGrafoEmDOT(Grafo *grafo, const string &nomeArquivo) {
     else
         arquivo << "graph G {\n";
 
+    string conector = grafo->direcionado ? " -> " : " -- ";
     int n = grafo->vertices.size();
 
-    for (int i = 0; i < n; i++)
-        arquivo << "    " << grafo->vertices[i] << ";\n";
+    for (int i = 0; i < n; i++) arquivo << "    " << grafo->vertices[i] << ";\n";
 
     for (int i = 0; i < n; i++) {
-        for (int j = (grafo->direcionado ? 0 : i + 1); j < n; j++) {
-            if (grafo->matriz->matriz[i][j] == 1) {
-                if (grafo->direcionado)
-                    arquivo << "    " << grafo->vertices[i] << " -> " << grafo->vertices[j] << ";\n";
-                else
-                    arquivo << "    " << grafo->vertices[i] << " -- " << grafo->vertices[j] << ";\n";
+        for (int j : grafo->lista_adj[i]) {
+            if (grafo->direcionado || i < j) {
+                arquivo << "    " << grafo->vertices[i] << conector << grafo->vertices[j] << ";\n";
             }
         }
     }
 
     arquivo << "}\n";
     arquivo.close();
+    
 }
 
-void gerar_matriz(Grafo *grafo) {
+// Função para gerar grafo aleatório
+void gerar_lista(Grafo *grafo) {
     int num_vertices, percent_arestas;
     char direcao;
 
     cout << "Número de vértices: ";
     cin >> num_vertices;
-    cout << "\nNúmero de arestas: ";
+    cout << "\nPorcentagem de arestas (0-100): ";
     cin >> percent_arestas;
     cout << "\nDirecionado (S/N): ";
     cin >> direcao;
 
     grafo->direcionado = (toupper(direcao) == 'S');
-    
 
     int max_arestas = grafo->direcionado ?
         (num_vertices * (num_vertices - 1)) :
-        (num_vertices * (num_vertices - 1)) / 2; // muda a quantidade de arestas de acordo com o tipo de grafo
+        (num_vertices * (num_vertices - 1)) / 2;
 
     int num_arestas = static_cast<int>(max_arestas * (percent_arestas / 100.0));
 
     grafo->vertices.clear();
     grafo->arestas.clear();
-    if (grafo->matriz != nullptr) {
-        delete grafo->matriz;
-        grafo->matriz = nullptr;
-    }
+    grafo->lista_adj.clear();
 
     for (int i = 0; i < num_vertices; i++) {
         string nome(1, 'A' + i);
         grafo->vertices.push_back(nome);
     }
 
-    grafo->matriz = new Matriz;
-    grafo->matriz->matriz.assign(num_vertices, vector<int>(num_vertices, 0));
-    srand(time(nullptr));
+    grafo->lista_adj.assign(num_vertices, vector<int>());
 
-    int arestas_criadas = 0;
-    while (arestas_criadas < num_arestas) {
+    srand(time(nullptr)); // gerador de numero aleatório com base na hora atal
+
+    int criadas = 0;
+    while (criadas < num_arestas) {
         int i = rand() % num_vertices;
         int j = rand() % num_vertices;
 
-        if (i != j && grafo->matriz->matriz[i][j] == 0) {
-            grafo->matriz->matriz[i][j] = 1;
+        if (i != j && find(grafo->lista_adj[i].begin(), grafo->lista_adj[i].end(), j) == grafo->lista_adj[i].end()) {
+            grafo->lista_adj[i].push_back(j);
             if (!grafo->direcionado)
-                grafo->matriz->matriz[j][i] = 1;
+                grafo->lista_adj[j].push_back(i);
 
             grafo->arestas.push_back({grafo->vertices[i], grafo->vertices[j]});
-            arestas_criadas++;
+            criadas++;
         }
     }
 
     grafo->qtd_arestas = grafo->arestas.size();
-    imprime_matriz(grafo, num_vertices);
+    imprime_lista(grafo);
 
     if (!ehConexo(grafo))
         cout << "O grafo NÃO é conexo.\n";
     else
         cout << "O grafo é conexo!\n";
-
-    salvarGrafoEmDOT(grafo, "../arquivos/arquivo2.dot");
-    system("dot -Tpng ../arquivos/arquivo1.dot -o ../arquivos/arquivo1.png");
+    salvarGrafoEmDOT(grafo, "../arquivos/arquivo1.dot");
 }
 
-void montarMatriz(Grafo *grafo) {
-    int size = grafo->vertices.size();
-
-    if (grafo->matriz != nullptr) {
-        delete grafo->matriz;
-        grafo->matriz = nullptr;
-    }
-
-    grafo->matriz = new Matriz;
-    grafo->matriz->matriz.assign(size, vector<int>(size, 0));
-
-    for (auto &a : grafo->arestas) {
-        int i = find(grafo->vertices.begin(), grafo->vertices.end(), a.first) - grafo->vertices.begin();
-        int j = find(grafo->vertices.begin(), grafo->vertices.end(), a.second) - grafo->vertices.begin();
-
-        if (i < size && j < size) {
-            grafo->matriz->matriz[i][j] = 1;
-            if (!grafo->direcionado)
-                grafo->matriz->matriz[j][i] = 1;
-        }
-    }
-
-    imprime_matriz(grafo, size);
-
-    if (!ehConexo(grafo))
-        cout << "O grafo NÃO é conexo.\n";
-    else
-        cout << "O grafo é conexo!\n";
-}
-
+// Menu
 int menu() {
     cout << "\n==== Menu ====\n";
     cout << "1 - Novo Grafo (gerar aleatório)\n";
     cout << "2 - Ler Grafo Existente (DOT)\n";
-    cout << "3 - Gerar Imagem do Grafo\n";
     cout << "0 - Sair\n";
     cout << "Opção: ";
 
@@ -269,15 +236,14 @@ int main() {
         option = menu();
         switch (option) {
             case 1:
-                gerar_matriz(grafo);
+                gerar_lista(grafo);
+                system("dot -Tpng ../arquivos/arquivo1.dot -o ../arquivos/arquivo1.png");
                 break;
             case 2:
                 lerArquivoDOT("../arquivos/arquivo.dot", grafo);
-                montarMatriz(grafo);
-                break;
-            case 3:
+                imprime_lista(grafo);
                 system("dot -Tpng ../arquivos/arquivo.dot -o ../arquivos/arquivo.png");
-                cout << "Imagem gerada em ../arquivos/arquivo.png\n";
+                cout << (ehConexo(grafo) ? "O grafo é conexo!\n" : "O grafo NÃO é conexo.\n");
                 break;
             case 0:
                 cout << "Saindo...\n";

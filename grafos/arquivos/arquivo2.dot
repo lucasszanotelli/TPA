@@ -1,15 +1,11 @@
-graph G {
+digraph G {
     A;
     B;
     C;
     D;
     E;
-    A -- B;
-    A -- C;
-    A -- D;
-    A -- E;
-    B -- C;
-    B -- D;
-    B -- E;
-    D -- E;
+    A -> B;
+    A -> C;
+    A -> D;
+    E -> D;
 }
