@@ -156,7 +156,7 @@ void salvarGrafoEmDOT(Grafo *grafo, const string &nomeArquivo) {
     
 }
 
-// Função para gerar grafo aleatório
+
 void gerar_lista(Grafo *grafo) {
     int num_vertices, percent_arestas;
     char direcao;

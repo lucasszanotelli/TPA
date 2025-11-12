@@ -313,7 +313,6 @@ void leitura_de_arquivo_dot_direcional(){
     
     int maior = 0;
 
-
     do
     {
         iss.clear();
