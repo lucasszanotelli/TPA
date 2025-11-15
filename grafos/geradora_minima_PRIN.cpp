@@ -25,15 +25,12 @@ struct Vertice{
 struct Grafo {
     vector<Vertice> vertices;               // lista de vértices
     bool direcionado = false;
-    int qtd_arestas = 0;
 };
 
-Grafo *grafo = new Grafo;
 //===============================================
 
-void inicializa( int tamanho){
+void inicializa(Grafo *grafo, int tamanho){
 
-    grafo->qtd_arestas = tamanho;
     grafo->direcionado = false;
     grafo->vertices.resize(tamanho);
 
@@ -52,45 +49,6 @@ void adicionaVizinho(Vertice &origem, Vertice *destino, int peso) {
     origem.vizinhos = novo;
 }
 
-// --- função principal para leitura ---
-// void lerDOT(const string &nomeArquivo) {
-//     ifstream arquivo(nomeArquivo);
-//     string linha;
-//     if(!arquivo.is_open()){
-//         cout << "erro ao abrir arquivo!" << endl;
-//         return;
-//     } 
-
-//     getline(arquivo, linha);
-//     istringstream iss(linha);
-
-//     while (getline(arquivo, linha)) {
-//         if (linha.empty() || linha.find("graph") != string::npos || linha == "{" || linha == "}")
-//             continue;
-//         if (linha.back() == ';') linha.pop_back();
-
-//         if (linha.find("--") != string::npos || linha.find("->") != string::npos) {
-//             stringstream ss(linha);
-//             string v1, ignore, v2;
-//             ss >> v1 >> ignore >> v2;
-
-//             if (ignore == "->") {
-//                 grafo->direcionado = true;
-//                 grafo->arestas.push_back({v1, v2});
-//             } else {
-//                 grafo->arestas.push_back({v1, v2});
-//             }
-
-//             grafo->vertices.push_back(v1);
-//             grafo->vertices.push_back(v2);
-//         } else {
-//             grafo->vertices.push_back(linha);
-//         }
-//     }
-
-//     arquivo.close();
-        
-// }
 
 void imprime_vertice(const Vertice &vertice) {
     cout << vertice.valor << " - ";
@@ -105,13 +63,15 @@ void imprime_vertice(const Vertice &vertice) {
     cout << endl;
 }
 
-void imprime_grafo(){
+void imprime_grafo(Grafo *grafo){
     for (const Vertice &v : grafo->vertices) {
         imprime_vertice(v);
     }
 }
 
-void salvar_DOT(const string &nomeDOT, int qtd_vertices) {
+
+
+void salvar_DOT(Grafo *grafo, const string &nomeDOT, int qtd_vertices) {
     ofstream arquivo(nomeDOT);
     if (!arquivo.is_open()) {
         cout << "Erro ao abrir o arquivo " << nomeDOT << " para escrita.\n";
@@ -128,12 +88,12 @@ void salvar_DOT(const string &nomeDOT, int qtd_vertices) {
     }
 
     // escreve vértices
-    for (int i = 0; i <= qtd_vertices; i++) {
+    for (int i = 0; i < qtd_vertices; i++) {
         arquivo << "    " << grafo->vertices[i].valor << ";\n";
     }
 
     // escreve arestas
-    for (int i = 0; i <= qtd_vertices; i++) {
+    for (int i = 0; i < qtd_vertices; i++) {
         Vizinho *atual = grafo->vertices[i].vizinhos;
 
         while (atual != nullptr) {
@@ -159,7 +119,36 @@ void salvar_DOT(const string &nomeDOT, int qtd_vertices) {
 
 }
 
-void gerar_grafo(){
+void gerar_prin(Grafo *grafo, Grafo *grafo_PRIM){
+    int tamanho_grafo = grafo->vertices.size();
+    if(tamanho_grafo==0 || !grafo->direcionado){
+        cout << "IMPOSSÍVEL GERAR PRIM";
+        return;
+    }
+
+    inicializa(grafo_PRIM, tamanho_grafo);
+    if(!grafo->direcionado){
+        cout << "O grafo é direcionado, não é possível construir PRIM";
+        return;
+    }
+
+    
+
+}
+
+bool existeAresta(Grafo *grafo,int a, int b) {
+    Vizinho* atual = grafo->vertices[a].vizinhos;
+
+    while (atual != nullptr) {
+        if (atual->vizinho->valor == b) {
+            return true;
+        }
+        atual = atual->prox;
+    }
+    return false;
+}
+
+void gerar_grafo(Grafo *grafo){
     int num_vertices, percent_arestas;
     char direcao;
 
@@ -170,16 +159,16 @@ void gerar_grafo(){
     cout << "\nDirecionado (S/N): ";
     cin >> direcao;
 
-    grafo->direcionado = (toupper(direcao) == 'S');
+    grafo->direcionado = (toupper(direcao) == 'S');// torna true o grafo->direcionado
     grafo->vertices.clear();
-    grafo->vertices.resize(num_vertices);
-    grafo->qtd_arestas = 0;
+    // grafo->vertices.resize(num_vertices);
 
-    // inicializa vértices
-    for (int i = 0; i < num_vertices; i++) {
-        grafo->vertices[i].valor = i;
-        grafo->vertices[i].vizinhos = nullptr;
-    }
+    inicializa(grafo, num_vertices);
+    
+    // for (int i = 0; i < num_vertices; i++) {
+    //     grafo->vertices[i].valor = i;
+    //     grafo->vertices[i].vizinhos = nullptr;
+    // }
 
     // número máximo e real de arestas
     int max_arestas = grafo->direcionado ?
@@ -200,6 +189,10 @@ void gerar_grafo(){
             i--;
             continue;
         }
+        if(existeAresta(grafo, a, b)){
+            i--;
+            continue;
+        }
 
         // adiciona aresta
         adicionaVizinho(grafo->vertices[a], &grafo->vertices[b], peso);
@@ -208,16 +201,14 @@ void gerar_grafo(){
             adicionaVizinho(grafo->vertices[b], &grafo->vertices[a], peso);
         }
 
-        grafo->qtd_arestas++;
+        
     }
 
     cout << "\nGrafo gerado com sucesso!" << endl;
-    imprime_grafo(); // mostra o grafo completo
+    imprime_grafo(grafo); // mostra o grafo completo
     //imprime_grafo();
-    salvar_DOT("../arquivos/arquivo3.dot", num_arestas);
+    salvar_DOT(grafo,"../arquivos/arquivo3.dot", num_vertices-1);
     
-    
-
 }
 
 
@@ -237,13 +228,14 @@ int menu() {
 int main() {
     SetConsoleOutputCP(65001);
     Grafo *grafo = new Grafo;
+    Grafo *grafo_PRIM = new Grafo;
     int option;
 
     do {
         option = menu();
         switch (option) {
             case 1:
-                gerar_grafo();
+                gerar_grafo(grafo);
                 system("dot -Tpng ../arquivos/arquivo1.dot -o ../arquivos/arquivo1.png");
                 break;
             case 2:
@@ -252,6 +244,8 @@ int main() {
                 system("dot -Tpng ../arquivos/arquivo.dot -o ../arquivos/arquivo.png");
                 //cout << (ehConexo() ? "O grafo é conexo!\n" : "O grafo NÃO é conexo.\n");
                 break;
+            case 3:
+                gerar_prin(grafo, grafo_PRIM);
             case 0:
                 cout << "Saindo...\n";
                 break;
