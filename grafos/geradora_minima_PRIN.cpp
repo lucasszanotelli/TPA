@@ -7,6 +7,7 @@
 #include <stack>
 #include <ctime>
 #include <windows.h>
+#include <climits> //INT_MAX
 
 using namespace std;
 struct Vertice;
@@ -26,8 +27,6 @@ struct Grafo {
     vector<Vertice> vertices;               // lista de vértices
     bool direcionado = false;
 };
-
-//===============================================
 
 void inicializa(Grafo *grafo, int tamanho){
 
@@ -63,13 +62,11 @@ void imprime_vertice(const Vertice &vertice) {
     cout << endl;
 }
 
-void imprime_grafo(Grafo *grafo){
+void imprime_grafo(Grafo *grafo){  
     for (const Vertice &v : grafo->vertices) {
         imprime_vertice(v);
     }
 }
-
-
 
 void salvar_DOT(Grafo *grafo, const string &nomeDOT, int qtd_vertices) {
     ofstream arquivo(nomeDOT);
@@ -79,6 +76,7 @@ void salvar_DOT(Grafo *grafo, const string &nomeDOT, int qtd_vertices) {
     }
 
     string ligacao;
+
     if (grafo->direcionado) {
         arquivo << "digraph G {\n";
         ligacao = " -> ";
@@ -118,23 +116,47 @@ void salvar_DOT(Grafo *grafo, const string &nomeDOT, int qtd_vertices) {
     system("dot -Tpng ../arquivos/arquivo3.dot -o ../arquivos/arquivo3.png");
 
 }
-
 void gerar_prin(Grafo *grafo, Grafo *grafo_PRIM){
     int tamanho_grafo = grafo->vertices.size();
-    if(tamanho_grafo==0 || !grafo->direcionado){
-        cout << "IMPOSSÍVEL GERAR PRIM";
+
+    if (tamanho_grafo == 0 || grafo->direcionado != 0){
+        cout << "IMPOSSÍVEL GERAR PRIM EM GRAFO DIRECIONADO!\n";
         return;
     }
 
     inicializa(grafo_PRIM, tamanho_grafo);
-    if(!grafo->direcionado){
-        cout << "O grafo é direcionado, não é possível construir PRIM";
-        return;
-    }
 
     
+    vector<int> visitados[0] = grafo->vertices[0];
+
+    for (int i = 0; i < tamanho_grafo; i++){
+        
+    }
+    
+
+   
+
+
+
+
+
+
+
+
+
+    for (int v = 0; v < tamanho_grafo; v++) {
+        if (pai[v] != -1) {
+            adicionaVizinho(grafo_PRIM->vertices[pai[v]], &grafo_PRIM->vertices[v], chave[v]);
+            adicionaVizinho(grafo_PRIM->vertices[v], &grafo_PRIM->vertices[pai[v]], chave[v]);
+        }
+    }
+
+    imprime_grafo(grafo_PRIM);
+    salvar_DOT(grafo_PRIM, "../arquivos/arquivo4.dot",tamanho_grafo);
+    system("dot -Tpng ../arquivos/arquivo4.dot -o ../arquivos/arquivo4.png");
 
 }
+
 
 bool existeAresta(Grafo *grafo,int a, int b) {
     Vizinho* atual = grafo->vertices[a].vizinhos;
@@ -148,7 +170,7 @@ bool existeAresta(Grafo *grafo,int a, int b) {
     return false;
 }
 
-void gerar_grafo(Grafo *grafo){
+void gerar_grafo(Grafo &grafo){
     int num_vertices, percent_arestas;
     char direcao;
 
@@ -158,20 +180,20 @@ void gerar_grafo(Grafo *grafo){
     cin >> percent_arestas;
     cout << "\nDirecionado (S/N): ";
     cin >> direcao;
-
-    grafo->direcionado = (toupper(direcao) == 'S');// torna true o grafo->direcionado
-    grafo->vertices.clear();
-    // grafo->vertices.resize(num_vertices);
-
-    inicializa(grafo, num_vertices);
     
-    // for (int i = 0; i < num_vertices; i++) {
-    //     grafo->vertices[i].valor = i;
-    //     grafo->vertices[i].vizinhos = nullptr;
-    // }
+    inicializa(&grafo, num_vertices);
+
+    grafo.direcionado = (toupper(direcao) == 'S') ? true : false; // torna true o grafo->direcionado se receber sim 
+    grafo.vertices.clear();
+    grafo.vertices.resize(num_vertices);
+
+    for(int i = 0; i < num_vertices; i++){
+        grafo.vertices[i].valor = i;
+        grafo.vertices[i].vizinhos = nullptr;
+    }
 
     // número máximo e real de arestas
-    int max_arestas = grafo->direcionado ?
+    int max_arestas = grafo.direcionado ?
         (num_vertices * (num_vertices - 1)) :
         (num_vertices * (num_vertices - 1)) / 2;
 
@@ -189,25 +211,25 @@ void gerar_grafo(Grafo *grafo){
             i--;
             continue;
         }
-        if(existeAresta(grafo, a, b)){
+        if(existeAresta(&grafo, a, b)){
             i--;
             continue;
         }
 
         // adiciona aresta
-        adicionaVizinho(grafo->vertices[a], &grafo->vertices[b], peso);
+        adicionaVizinho(grafo.vertices[a], &grafo.vertices[b], peso);
 
-        if (!grafo->direcionado) {
-            adicionaVizinho(grafo->vertices[b], &grafo->vertices[a], peso);
+        if (!grafo.direcionado) {
+            adicionaVizinho(grafo.vertices[b], &grafo.vertices[a], peso);
         }
 
-        
     }
 
     cout << "\nGrafo gerado com sucesso!" << endl;
-    imprime_grafo(grafo); // mostra o grafo completo
-    //imprime_grafo();
-    salvar_DOT(grafo,"../arquivos/arquivo3.dot", num_vertices-1);
+    cout << "Tamanho: "<<grafo.vertices.size()<<endl;
+    imprime_grafo(&grafo); // mostra o grafo completo
+
+    salvar_DOT(&grafo ,"../arquivos/arquivo3.dot", num_vertices);
     
 }
 
@@ -217,6 +239,7 @@ int menu() {
     cout << "\n==== Menu ====\n";
     cout << "1 - Novo Grafo (gerar aleatório)\n";
     cout << "2 - Ler Grafo Existente (DOT)\n";
+    cout << "3 - Gerar PRIN\n";
     cout << "0 - Sair\n";
     cout << "Opção: ";
 
@@ -235,8 +258,8 @@ int main() {
         option = menu();
         switch (option) {
             case 1:
-                gerar_grafo(grafo);
-                system("dot -Tpng ../arquivos/arquivo1.dot -o ../arquivos/arquivo1.png");
+                gerar_grafo(*grafo);
+                // system("dot -Tpng ../arquivos/arquivo1.dot -o ../arquivos/arquivo1.png");
                 break;
             case 2:
                 //lerDOT("../arquivos/arquivo.dot");
@@ -247,7 +270,7 @@ int main() {
             case 3:
                 gerar_prin(grafo, grafo_PRIM);
             case 0:
-                cout << "Saindo...\n";
+                cout << "\nSaindo...\n";
                 break;
             default:
                 cout << "Opção inválida.\n";
