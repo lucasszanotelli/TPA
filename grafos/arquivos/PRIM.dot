@@ -1,0 +1,11 @@
+graph G {
+    0;
+    1;
+    2;
+    3;
+    4;
+    0 -- 1 [label=4, weight=4];
+    1 -- 2 [label=4, weight=4];
+    1 -- 4 [label=3, weight=3];
+    2 -- 3 [label=1, weight=1];
+}

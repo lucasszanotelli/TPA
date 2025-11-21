@@ -40,12 +40,44 @@ void inicializa(Grafo *grafo, int tamanho){
 
 }
 
-void adicionaVizinho(Vertice &origem, Vertice *destino, int peso) {
+void adicionaVizinho(Vertice *origem, Vertice *destino, int peso) {
     Vizinho *novo = new Vizinho;
     novo->vizinho = destino;
     novo->peso = peso;
-    novo->prox = origem.vizinhos;
-    origem.vizinhos = novo;
+    novo->prox = origem->vizinhos;
+    origem->vizinhos = novo;
+}
+
+bool eh_conexo(Grafo *grafo){
+    int tamanho = grafo->vertices.size();
+
+    vector <bool> visitados(tamanho, false);
+    stack<int> pilha;
+    pilha.push(0); // insere o numero 0 na pilha
+    visitados[0] = true;
+
+    while(!pilha.empty()){
+        int first = pilha.top(); // pega o elemento do topo da pilha
+        pilha.pop(); // remove o elemento da pilha
+
+        Vizinho *vizinho = grafo->vertices[first].vizinhos;
+        while (vizinho != NULL){
+            int aux = vizinho->vizinho->valor;
+
+            if(!visitados[aux]){
+                visitados[aux] = TRUE;
+                pilha.push(aux); // insere o elemento no topo da pilha
+            }
+            vizinho = vizinho->prox;
+            
+        }
+        
+    }
+    for (bool v : visitados) {
+        if (!v) return false;
+    }
+
+    return true;
 }
 
 
@@ -66,6 +98,12 @@ void imprime_grafo(Grafo *grafo){
     for (const Vertice &v : grafo->vertices) {
         imprime_vertice(v);
     }
+    if (eh_conexo(grafo)){
+        cout << "O grafo é conexo"<<endl;
+        return;
+    }
+    cout << "O grafo NÃO é conexo"<<endl;
+   
 }
 
 void salvar_DOT(Grafo *grafo, const string &nomeDOT, int qtd_vertices) {
@@ -113,47 +151,75 @@ void salvar_DOT(Grafo *grafo, const string &nomeDOT, int qtd_vertices) {
     arquivo.close();
 
     cout << "Arquivo " << nomeDOT << " salvo com sucesso!\n";
-    system("dot -Tpng ../arquivos/arquivo3.dot -o ../arquivos/arquivo3.png");
+    system("dot -Tpng ../arquivos/grafoAleatorio.dot -o ../arquivos/grafoAleatorio.png");
 
 }
-void gerar_prin(Grafo *grafo, Grafo *grafo_PRIM){
+void gerar_prim(Grafo *grafo, Grafo *grafo_PRIM){
     int tamanho_grafo = grafo->vertices.size();
 
-    if (tamanho_grafo == 0 || grafo->direcionado != 0){
-        cout << "IMPOSSÍVEL GERAR PRIM EM GRAFO DIRECIONADO!\n";
+    if (tamanho_grafo == 0 || grafo->direcionado != 0 || !eh_conexo(grafo)){
+        cout << "IMPOSSÍVEL GERAR PRIM NESTE GRAFO!\n";
         return;
     }
 
     inicializa(grafo_PRIM, tamanho_grafo);
-
-    
-    vector<int> visitados[0] = grafo->vertices[0];
+    grafo_PRIM->vertices.clear();
+    grafo_PRIM->vertices.resize(tamanho_grafo);
 
     for (int i = 0; i < tamanho_grafo; i++){
-        
+        grafo_PRIM->vertices[i].valor = i;
+        grafo_PRIM->vertices[i].vizinhos = NULL;        
     }
     
+    vector<bool> visitados(tamanho_grafo,false);
 
-   
+    visitados[0] = TRUE;
+    int num_visitados = 1;
 
+    while (num_visitados < tamanho_grafo){
+        int menor_peso = INT_MAX;
 
+        //preciso salvar o "CAMINHO"
+        int de = -1;   // vértice já visitado
+        int para = -1; // vizinho novo
+        
+        for (int j = 0; j < tamanho_grafo; j++){
+            if(!visitados[j])continue;
 
+            Vizinho *vizinho = grafo->vertices[j].vizinhos;
+            
+            while (vizinho != NULL){
 
+                int aux = vizinho->vizinho->valor;
 
+                if(visitados[aux]) {
+                    vizinho = vizinho->prox;
+                    continue;
+                }
+            
 
+                if(vizinho->peso< menor_peso){
+                    menor_peso = vizinho->peso;
+                    de = j;
+                    para = aux;
+                }
+                vizinho = vizinho->prox;
+                
+            }        
+        }
 
+        if(de != -1 && para != -1){
+            adicionaVizinho(&grafo_PRIM->vertices[de], &grafo_PRIM->vertices[para], menor_peso);
+            adicionaVizinho(&grafo_PRIM->vertices[para], &grafo_PRIM->vertices[de], menor_peso);
 
-
-    for (int v = 0; v < tamanho_grafo; v++) {
-        if (pai[v] != -1) {
-            adicionaVizinho(grafo_PRIM->vertices[pai[v]], &grafo_PRIM->vertices[v], chave[v]);
-            adicionaVizinho(grafo_PRIM->vertices[v], &grafo_PRIM->vertices[pai[v]], chave[v]);
+            visitados[para] = TRUE;
+            num_visitados++;
         }
     }
-
+    
     imprime_grafo(grafo_PRIM);
-    salvar_DOT(grafo_PRIM, "../arquivos/arquivo4.dot",tamanho_grafo);
-    system("dot -Tpng ../arquivos/arquivo4.dot -o ../arquivos/arquivo4.png");
+    salvar_DOT(grafo_PRIM, "../arquivos/PRIM.dot",tamanho_grafo);
+    system("dot -Tpng ../arquivos/PRIM.dot -o ../arquivos/PRIM.png");
 
 }
 
@@ -170,7 +236,7 @@ bool existeAresta(Grafo *grafo,int a, int b) {
     return false;
 }
 
-void gerar_grafo(Grafo &grafo){
+void gerar_grafo(Grafo *grafo){
     int num_vertices, percent_arestas;
     char direcao;
 
@@ -181,19 +247,19 @@ void gerar_grafo(Grafo &grafo){
     cout << "\nDirecionado (S/N): ";
     cin >> direcao;
     
-    inicializa(&grafo, num_vertices);
+    inicializa(grafo, num_vertices);
 
-    grafo.direcionado = (toupper(direcao) == 'S') ? true : false; // torna true o grafo->direcionado se receber sim 
-    grafo.vertices.clear();
-    grafo.vertices.resize(num_vertices);
+    grafo->direcionado = (toupper(direcao) == 'S') ? true : false; // torna true o grafo->direcionado se receber sim 
+    grafo->vertices.clear();
+    grafo->vertices.resize(num_vertices);
 
     for(int i = 0; i < num_vertices; i++){
-        grafo.vertices[i].valor = i;
-        grafo.vertices[i].vizinhos = nullptr;
+        grafo->vertices[i].valor = i;
+        grafo->vertices[i].vizinhos = nullptr;
     }
 
     // número máximo e real de arestas
-    int max_arestas = grafo.direcionado ?
+    int max_arestas = grafo->direcionado ?
         (num_vertices * (num_vertices - 1)) :
         (num_vertices * (num_vertices - 1)) / 2;
 
@@ -211,26 +277,124 @@ void gerar_grafo(Grafo &grafo){
             i--;
             continue;
         }
-        if(existeAresta(&grafo, a, b)){
+        if(existeAresta(grafo, a, b)){
             i--;
             continue;
         }
 
         // adiciona aresta
-        adicionaVizinho(grafo.vertices[a], &grafo.vertices[b], peso);
+        adicionaVizinho(&grafo->vertices[a], &grafo->vertices[b], peso);
 
-        if (!grafo.direcionado) {
-            adicionaVizinho(grafo.vertices[b], &grafo.vertices[a], peso);
+        if (!grafo->direcionado) {
+            adicionaVizinho(&grafo->vertices[b], &grafo->vertices[a], peso);
         }
 
     }
 
     cout << "\nGrafo gerado com sucesso!" << endl;
-    cout << "Tamanho: "<<grafo.vertices.size()<<endl;
-    imprime_grafo(&grafo); // mostra o grafo completo
+    cout << "Tamanho: "<<grafo->vertices.size()<<endl;
+    imprime_grafo(grafo); // mostra o grafo completo
 
-    salvar_DOT(&grafo ,"../arquivos/arquivo3.dot", num_vertices);
+    salvar_DOT(grafo ,"../arquivos/grafoAleatorio.dot", num_vertices);
     
+}
+
+void lerDOT(Grafo *grafo, string nome_arquivo){
+    ifstream arquivo(nome_arquivo);
+    if (!arquivo.is_open()){
+        cout << "Erro ao abrir o arquivo!\n";
+        return;
+    }
+
+    grafo->vertices.clear();
+    string linha;
+
+    // 1 — lê a primeira linha: graph G {
+    getline(arquivo, linha);
+    grafo->direcionado = (linha.find("digraph") != string::npos);
+
+    vector<int> lista_vertices;
+
+    // 2 — lê vértices até encontrar uma aresta
+    while (getline(arquivo, linha)){
+
+        // remover espaços
+        linha.erase(remove_if(linha.begin(), linha.end(), ::isspace), linha.end());
+
+        if (linha == "}" || linha.empty()) continue;
+
+        // se é aresta, para aqui
+        if (linha.find("--") != string::npos || linha.find("->") != string::npos)
+            break;
+
+        if (linha.back() == ';') linha.pop_back();
+
+        lista_vertices.push_back(stoi(linha));
+    }
+
+    // 3 — cria o grafo
+    int n = lista_vertices.size();
+    inicializa(grafo, n);
+
+    for (int i = 0; i < n; i++){
+        grafo->vertices[i].valor = i;
+        grafo->vertices[i].vizinhos = nullptr;
+    }
+
+    // 4 — agora linha já contém a primeira aresta
+    do{
+        if (linha.empty() || linha == "}" ) continue;
+        if (linha.back() == ';') linha.pop_back();
+
+        // se não tem aresta, ignora
+        if (linha.find("--") == string::npos && linha.find("->") == string::npos)
+            continue;
+
+        // separar v1 e v2
+        size_t pos = linha.find("--");
+        int offset = 2;
+
+        if (pos == string::npos){
+            pos = linha.find("->");
+            offset = 2;
+        }
+
+        string v1 = linha.substr(0, pos);
+        string resto = linha.substr(pos + offset);
+
+        // limpar v1 e v2
+        v1.erase(remove_if(v1.begin(), v1.end(), ::isspace), v1.end());
+        size_t fim_v2 = resto.find("[");
+        string v2 = resto.substr(0, fim_v2);
+        v2.erase(remove_if(v2.begin(), v2.end(), ::isspace), v2.end());
+
+        int a = stoi(v1);
+        int b = stoi(v2);
+
+        // extrair weight=
+        int peso = 1;
+        size_t posW = linha.find("weight=");
+        if (posW != string::npos){
+            posW += 7;
+            string num;
+            while (posW < linha.size() && isdigit(linha[posW])){
+                num.push_back(linha[posW]);
+                posW++;
+            }
+            peso = stoi(num);
+        }
+
+        // adicionar aresta
+        adicionaVizinho(&grafo->vertices[a], &grafo->vertices[b], peso);
+        if (!grafo->direcionado)
+            adicionaVizinho(&grafo->vertices[b], &grafo->vertices[a], peso);
+
+    } while (getline(arquivo, linha));
+
+    arquivo.close();
+
+    imprime_grafo(grafo);
+
 }
 
 
@@ -258,19 +422,20 @@ int main() {
         option = menu();
         switch (option) {
             case 1:
-                gerar_grafo(*grafo);
-                // system("dot -Tpng ../arquivos/arquivo1.dot -o ../arquivos/arquivo1.png");
+                gerar_grafo(grafo);
+
                 break;
             case 2:
-                //lerDOT("../arquivos/arquivo.dot");
-                //imprime_lista();
-                system("dot -Tpng ../arquivos/arquivo.dot -o ../arquivos/arquivo.png");
-                //cout << (ehConexo() ? "O grafo é conexo!\n" : "O grafo NÃO é conexo.\n");
+                lerDOT(grafo, "../arquivos/pesos.dot");
+                system("dot -Tpng ../arquivos/pesos.dot -o ../arquivos/pesos.png");
+
                 break;
             case 3:
-                gerar_prin(grafo, grafo_PRIM);
+                gerar_prim(grafo, grafo_PRIM);
+
             case 0:
                 cout << "\nSaindo...\n";
+
                 break;
             default:
                 cout << "Opção inválida.\n";
