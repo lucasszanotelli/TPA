@@ -22,11 +22,19 @@ struct Vertice{
     int valor;
     Vizinho *vizinhos;
 };
+struct Aresta {
+    int origem;
+    int destino;
+    int peso;
+
+};
 
 struct Grafo {
     vector<Vertice> vertices;               // lista de vértices
+    vector<Aresta> arestas;                 //lista de arestas
     bool direcionado = false;
 };
+
 
 void inicializa(Grafo *grafo, int tamanho){
 
@@ -154,72 +162,128 @@ void salvar_DOT(Grafo *grafo, const string &nomeDOT, int qtd_vertices) {
     system("dot -Tpng ../arquivos/grafoAleatorio.dot -o ../arquivos/grafoAleatorio.png");
 
 }
-void gerar_prim(Grafo *grafo, Grafo *grafo_PRIM){
+
+
+// bool todos_um(vector<Aresta> vetor){
+
+// }
+
+
+// chat fez
+void ordenarArestas(vector<Aresta> &lista_arestas) {
+    sort(lista_arestas.begin(), lista_arestas.end(),
+        [](const Aresta &a, const Aresta &b) {
+            return a.peso < b.peso;   // ordena da menor para a maior aresta
+        }
+    );
+}
+
+void imprimir_arestas(vector<Aresta> &lista_arestas){
+    cout << "Arestas encontradas:\n";
+    for (auto &a : lista_arestas) {
+        cout << a.origem << " -- " << a.destino << " (peso " << a.peso << ")\n";
+    }
+}
+
+
+void gerar_kruskal(Grafo *grafo, Grafo *grafo_kruskal){
     int tamanho_grafo = grafo->vertices.size();
 
     if (tamanho_grafo == 0 || grafo->direcionado != 0 || !eh_conexo(grafo)){
-        cout << "IMPOSSÍVEL GERAR PRIM NESTE GRAFO!\n";
+        cout << "IMPOSSÍVEL GERAR KRUSKAL NESTE GRAFO!\n";
         return;
     }
 
-    inicializa(grafo_PRIM, tamanho_grafo);
-    grafo_PRIM->vertices.clear();
-    grafo_PRIM->vertices.resize(tamanho_grafo);
+    inicializa(grafo_kruskal, tamanho_grafo);
+    grafo_kruskal->vertices.resize(tamanho_grafo);
+    
+    for (int i = 0; i < tamanho_grafo; i++) {
+        grafo_kruskal->vertices[i].vizinhos = NULL;
+        grafo_kruskal->vertices[i].valor = i;
+    }
 
     for (int i = 0; i < tamanho_grafo; i++){
-        grafo_PRIM->vertices[i].valor = i;
-        grafo_PRIM->vertices[i].vizinhos = NULL;        
-    }
-    
-    vector<bool> visitados(tamanho_grafo,false);
 
-    visitados[0] = TRUE;
-    int num_visitados = 1;
+        Vertice v = grafo->vertices[i];
+        Vizinho *aux = v.vizinhos;
 
-    while (num_visitados < tamanho_grafo){
-        int menor_peso = INT_MAX;
 
-        //preciso salvar o "CAMINHO"
-        int de = -1;   // vértice já visitado
-        int para = -1; // vizinho novo
-        
-        for (int j = 0; j < tamanho_grafo; j++){
-            if(!visitados[j])continue;
-
-            Vizinho *vizinho = grafo->vertices[j].vizinhos;
-            
-            while (vizinho != NULL){
-
-                int aux = vizinho->vizinho->valor;
-
-                if(visitados[aux]) {
-                    vizinho = vizinho->prox;
-                    continue;
-                }
-            
-
-                if(vizinho->peso< menor_peso){
-                    menor_peso = vizinho->peso;
-                    de = j;
-                    para = aux;
-                }
-                vizinho = vizinho->prox;
-                
-            }        
-        }
-
-        if(de != -1 && para != -1){
-            adicionaVizinho(&grafo_PRIM->vertices[de], &grafo_PRIM->vertices[para], menor_peso);
-            adicionaVizinho(&grafo_PRIM->vertices[para], &grafo_PRIM->vertices[de], menor_peso);
-
-            visitados[para] = TRUE;
-            num_visitados++;
+        while (aux != NULL){
+            if (i < aux->vizinho->valor){
+                Aresta a;
+                a.origem = i;
+                a.destino = aux->vizinho->valor;
+                a.peso = aux->peso;
+                grafo_kruskal->arestas.push_back(a);
+            }
+            aux = aux->prox;
         }
     }
+    ordenarArestas(grafo_kruskal->arestas); // ordena a lista de arestas pelo sort() do menor para o maior
+    imprimir_arestas(grafo_kruskal->arestas);
+
+    vector<int> subgrafos;
+    subgrafos.resize(tamanho_grafo, 0);
+    int cont_sub_grafo = 1;
+
+    for(size_t k=0; k<grafo_kruskal->arestas.size(); k++){
+
+        int u = grafo_kruskal->arestas[k].origem;
+        int v = grafo_kruskal->arestas[k].destino;
+        int peso = grafo_kruskal->arestas[k].peso;
+
+        int su = subgrafos[u];
+        int sv = subgrafos[v];
+
+        //ambos não possuem subgrafo
+        if(su == 0 && sv == 0) {
+            subgrafos[u] = cont_sub_grafo;
+            subgrafos[v] = cont_sub_grafo;
+            cont_sub_grafo++;
+        }
+        //apenas um possui subgrafo
+        else if (su == 0 && sv != 0) {
+            subgrafos[u] = sv;
+        }
+        else if (su != 0 && sv == 0) {
+            subgrafos[v] = su;
+        }
+        //Cada um está em subgrafos diferentes => unir subgrafos
+        else if (su != sv) {
+            int menor = min(su, sv);
+            int maior = max(su, sv);
+
+            // unir todos os vértices do subgrafo maior dentro do menor
+            for (int i = 0; i < tamanho_grafo; i++) {
+                if (subgrafos[i] == maior)
+                    subgrafos[i] = menor;
+            }
+        }
+
+        //su == sv formaria ciclo => ignorar aresta
+        else {
+            continue;
+        }
+        //aqui, a aresta pode ser adicionada na arvore
+
+        Vizinho *nv1 = new Vizinho;
+        nv1->vizinho = &grafo_kruskal->vertices[v];
+        nv1->peso = peso;
+        nv1->prox = grafo_kruskal->vertices[u].vizinhos;
+        grafo_kruskal->vertices[u].vizinhos = nv1;
+
+        // adicionar v → u (grafo não direcionado)
+        Vizinho *nv2 = new Vizinho;
+        nv2->vizinho = &grafo_kruskal->vertices[u];
+        nv2->peso = peso;
+        nv2->prox = grafo_kruskal->vertices[v].vizinhos;
+        grafo_kruskal->vertices[v].vizinhos = nv2;
+
+    }
     
-    imprime_grafo(grafo_PRIM);
-    salvar_DOT(grafo_PRIM, "../arquivos/PRIM.dot",tamanho_grafo);
-    system("dot -Tpng ../arquivos/PRIM.dot -o ../arquivos/PRIM.png");
+    imprime_grafo(grafo_kruskal);
+    salvar_DOT(grafo_kruskal, "../arquivos/KRUSKAL.dot",tamanho_grafo);
+    system("dot -Tpng ../arquivos/KRUSKAL.dot -o ../arquivos/KRUSKAL.png");
 
 }
 
@@ -403,7 +467,7 @@ int menu() {
     cout << "\n==== Menu ====\n";
     cout << "1 - Novo Grafo (gerar aleatório)\n";
     cout << "2 - Ler Grafo Existente (DOT)\n";
-    cout << "3 - Gerar PRIN\n";
+    cout << "3 - Gerar Kruskal\n";
     cout << "0 - Sair\n";
     cout << "Opção: ";
 
@@ -415,29 +479,27 @@ int menu() {
 int main() {
     SetConsoleOutputCP(65001);
     Grafo *grafo = new Grafo;
-    Grafo *grafo_PRIM = new Grafo;
-    int option;
+    Grafo *grafo_kruskal = new Grafo;
 
     lerDOT(grafo, "../arquivos/grafoAleatorio.dot");
+
+    int option;
 
     do {
         option = menu();
         switch (option) {
             case 1:
                 gerar_grafo(grafo);
-
                 break;
             case 2:
                 lerDOT(grafo, "../arquivos/pesos.dot");
                 system("dot -Tpng ../arquivos/pesos.dot -o ../arquivos/pesos.png");
-
                 break;
             case 3:
-                gerar_prim(grafo, grafo_PRIM);
-
+                gerar_kruskal(grafo, grafo_kruskal);
+                break;
             case 0:
                 cout << "\nSaindo...\n";
-
                 break;
             default:
                 cout << "Opção inválida.\n";

@@ -22,11 +22,19 @@ struct Vertice{
     int valor;
     Vizinho *vizinhos;
 };
+struct Aresta {
+    int origem;
+    int destino;
+    int peso;
+
+};
 
 struct Grafo {
     vector<Vertice> vertices;               // lista de vértices
+    vector<Aresta> arestas;                 //lista de arestas
     bool direcionado = false;
 };
+
 
 void inicializa(Grafo *grafo, int tamanho){
 
@@ -154,74 +162,39 @@ void salvar_DOT(Grafo *grafo, const string &nomeDOT, int qtd_vertices) {
     system("dot -Tpng ../arquivos/grafoAleatorio.dot -o ../arquivos/grafoAleatorio.png");
 
 }
-void gerar_prim(Grafo *grafo, Grafo *grafo_PRIM){
+
+void ordenarArestas(vector<Aresta> &lista_arestas) {
+    sort(lista_arestas.begin(), lista_arestas.end(),
+        [](const Aresta &a, const Aresta &b) {
+            return a.peso < b.peso;   // ordena da menor para a maior aresta
+        }
+    );
+}
+
+void imprimir_arestas(vector<Aresta> &lista_arestas){
+    cout << "Arestas encontradas:\n";
+    for (auto &a : lista_arestas) {
+        cout << a.origem << " -- " << a.destino << " (peso " << a.peso << ")\n";
+    }
+}
+
+void gerar_dijkstra(Grafo *grafo, Grafo *dijkstra){
     int tamanho_grafo = grafo->vertices.size();
 
-    if (tamanho_grafo == 0 || grafo->direcionado != 0 || !eh_conexo(grafo)){
-        cout << "IMPOSSÍVEL GERAR PRIM NESTE GRAFO!\n";
+    if(tamanho_grafo == 0){
+        cout << "IMPOSSÍVEL GERAR GRAFO DIJIKSTRA"<<endl;
         return;
     }
 
-    inicializa(grafo_PRIM, tamanho_grafo);
-    grafo_PRIM->vertices.clear();
-    grafo_PRIM->vertices.resize(tamanho_grafo);
-
-    for (int i = 0; i < tamanho_grafo; i++){
-        grafo_PRIM->vertices[i].valor = i;
-        grafo_PRIM->vertices[i].vizinhos = NULL;        
-    }
     
-    vector<bool> visitados(tamanho_grafo,false);
-
-    visitados[0] = TRUE;
-    int num_visitados = 1;
-
-    while (num_visitados < tamanho_grafo){
-        int menor_peso = INT_MAX;
-
-        //preciso salvar o "CAMINHO"
-        int de = -1;   // vértice já visitado
-        int para = -1; // vizinho novo
-        
-        for (int j = 0; j < tamanho_grafo; j++){
-            if(!visitados[j])continue;
-
-            Vizinho *vizinho = grafo->vertices[j].vizinhos;
-            
-            while (vizinho != NULL){
-
-                int aux = vizinho->vizinho->valor;
-
-                if(visitados[aux]) {
-                    vizinho = vizinho->prox;
-                    continue;
-                }
-            
-
-                if(vizinho->peso< menor_peso){
-                    menor_peso = vizinho->peso;
-                    de = j;
-                    para = aux;
-                }
-                vizinho = vizinho->prox;
-                
-            }        
-        }
-
-        if(de != -1 && para != -1){
-            adicionaVizinho(&grafo_PRIM->vertices[de], &grafo_PRIM->vertices[para], menor_peso);
-            adicionaVizinho(&grafo_PRIM->vertices[para], &grafo_PRIM->vertices[de], menor_peso);
-
-            visitados[para] = TRUE;
-            num_visitados++;
-        }
-    }
-    
-    imprime_grafo(grafo_PRIM);
-    salvar_DOT(grafo_PRIM, "../arquivos/PRIM.dot",tamanho_grafo);
-    system("dot -Tpng ../arquivos/PRIM.dot -o ../arquivos/PRIM.png");
 
 }
+
+
+
+
+
+
 
 
 bool existeAresta(Grafo *grafo,int a, int b) {
@@ -403,7 +376,7 @@ int menu() {
     cout << "\n==== Menu ====\n";
     cout << "1 - Novo Grafo (gerar aleatório)\n";
     cout << "2 - Ler Grafo Existente (DOT)\n";
-    cout << "3 - Gerar PRIN\n";
+    cout << "3 - Gerar Kruskal\n";
     cout << "0 - Sair\n";
     cout << "Opção: ";
 
@@ -415,29 +388,27 @@ int menu() {
 int main() {
     SetConsoleOutputCP(65001);
     Grafo *grafo = new Grafo;
-    Grafo *grafo_PRIM = new Grafo;
-    int option;
+    Grafo *dijkstra = new Grafo;
 
     lerDOT(grafo, "../arquivos/grafoAleatorio.dot");
+
+    int option;
 
     do {
         option = menu();
         switch (option) {
             case 1:
                 gerar_grafo(grafo);
-
                 break;
             case 2:
                 lerDOT(grafo, "../arquivos/pesos.dot");
                 system("dot -Tpng ../arquivos/pesos.dot -o ../arquivos/pesos.png");
-
                 break;
             case 3:
-                gerar_prim(grafo, grafo_PRIM);
-
+                gerar_dijkstra(dijkstra);
+                break;
             case 0:
                 cout << "\nSaindo...\n";
-
                 break;
             default:
                 cout << "Opção inválida.\n";
