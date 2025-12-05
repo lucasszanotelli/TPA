@@ -180,6 +180,7 @@ void imprimir_arestas(vector<Aresta> &lista_arestas){
 
 void gerar_dijkstra(Grafo *grafo, Grafo *dijkstra){
     int tamanho_grafo = grafo->vertices.size();
+    int origem, destino;
 
     if(tamanho_grafo == 0){
         cout << "IMPOSSÍVEL GERAR GRAFO DIJIKSTRA"<<endl;
@@ -187,6 +188,29 @@ void gerar_dijkstra(Grafo *grafo, Grafo *dijkstra){
     }
 
     
+    vector<pair<int,int>> iter;
+    iter.resize(tamanho_grafo);
+    for (size_t i = 0; i < tamanho_grafo; i++){
+        iter[i].first = INT_MAX;
+        iter[i].second = 0; 
+    }
+    
+    cout<< "Digite a origem: "<<endl;
+    cin>>origem;
+    cout<< "Digite o destino: "<<endl;
+    cin>>destino;
+
+    iter[origem].first = 0;
+    iter[origem].second = -1;
+
+    for (int iv = 0; v < tamanho_grafo; v++){
+        
+    }
+    
+    
+
+
+
 
 }
 
