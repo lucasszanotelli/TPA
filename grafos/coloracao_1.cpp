@@ -22,6 +22,7 @@ struct Vizinho{
 struct Vertice{
     int valor;
     Vizinho *vizinhos;
+    int cor = 0;
 };
 struct Aresta{
     int origem;
@@ -110,7 +111,8 @@ void imprime_grafo(Grafo *grafo){
 }
 
 void salvar_DOT(Grafo *grafo, const string &nomeDOT, int qtd_vertices){
-    vector<string> lista_cor={"back", "red"};
+    vector<string> lista_cor={"black","red","blue","green","orange","purple","brown","pink","yellow"};
+
     ofstream arquivo(nomeDOT);
     if (!arquivo.is_open())    {
         cout << "Erro ao abrir o arquivo " << nomeDOT << " para escrita.\n";
@@ -130,7 +132,7 @@ void salvar_DOT(Grafo *grafo, const string &nomeDOT, int qtd_vertices){
 
     // escreve vértices
     for (int i = 0; i < qtd_vertices; i++){
-        arquivo << "    " << grafo->vertices[i].valor << ";\n";
+        arquivo << "    " << grafo->vertices[i].valor << " [color="<< lista_cor[grafo->vertices[i].cor]<<"];\n";
     }
 
     // escreve arestas
@@ -301,6 +303,62 @@ bool existeAresta(Grafo *grafo, int a, int b){
     return false;
 }
 
+void coloracao_gulosa(Grafo *grafo) {
+    int n = grafo->vertices.size();
+    if (n == 0) {
+        cout << "Grafo vazio. Não é possível colorir.\n";
+        return;
+    }
+
+    vector<int> cor(n, -1);      // cor de cada vértice
+    vector<bool> usado(n, false); // marcadores temporários
+
+    // Vértice 0 recebe cor 0
+    cor[0] = 0;
+
+    // Para todos os outros vértices
+    for (int u = 1; u < n; u++) {
+
+        // marca cores usadas pelos vizinhos
+        Vizinho *v = grafo->vertices[u].vizinhos;
+        while (v != nullptr) {
+            int idViz = v->vizinho->valor;
+            if (cor[idViz] != -1)
+                usado[cor[idViz]] = true;
+            v = v->prox;
+        }
+
+        // encontra a menor cor disponível
+        int corEscolhida = 0;
+        while (corEscolhida < n && usado[corEscolhida])
+            corEscolhida++;
+
+        cor[u] = corEscolhida;
+
+        // limpa o vetor “usado” para próxima iteração
+        v = grafo->vertices[u].vizinhos;
+        while (v != nullptr) {
+            int idViz = v->vizinho->valor;
+            if (cor[idViz] != -1)
+                usado[cor[idViz]] = false;
+            v = v->prox;
+        }
+    }
+
+    // salva no grafo
+    for (int i = 0; i < n; i++)
+        grafo->vertices[i].cor = cor[i];
+
+    cout << "\n=== Coloração Gulosa (vértices) ===\n";
+    for (int i = 0; i < n; i++)
+        cout << "Vértice " << i << " → cor " << cor[i] << endl;
+
+    salvar_DOT(grafo, "../arquivos/COLORACAO.dot", n);
+    system("dot -Tpng ../arquivos/COLORACAO.dot -o ../arquivos/COLORACAO.png");
+
+    cout << "\nColoração salva em COLORACAO.dot e COLORACAO.png\n";
+}
+
 void gerar_grafo(Grafo *grafo){
     int num_vertices, percent_arestas;
     char direcao;
@@ -462,6 +520,7 @@ int menu(){
     cout << "1 - Novo Grafo (gerar aleatório)\n";
     cout << "2 - Ler Grafo Existente (DOT)\n";
     cout << "3 - Gerar DIJKSTRA\n";
+    cout << "4 - Coloracao Gulosa\n";
     cout << "0 - Sair\n";
     cout << "Opção: ";
 
@@ -490,6 +549,9 @@ int main(){
             break;
         case 3:
             gerar_dijkstra(grafo);
+            break;
+        case 4:
+            coloracao_gulosa(grafo);
             break;
         case 0:
             cout << "\nSaindo...\n";
