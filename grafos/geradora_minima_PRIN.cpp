@@ -223,7 +223,6 @@ void gerar_prim(Grafo *grafo, Grafo *grafo_PRIM){
 
 }
 
-
 bool existeAresta(Grafo *grafo,int a, int b) {
     Vizinho* atual = grafo->vertices[a].vizinhos;
 

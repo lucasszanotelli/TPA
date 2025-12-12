@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <unordered_set>
 #include <stack>
 #include <ctime>
 #include <windows.h>
@@ -303,6 +304,90 @@ bool existeAresta(Grafo *grafo, int a, int b){
     return false;
 }
 
+void coloracaoDSATUR(Grafo *grafo) {
+    int n = grafo->vertices.size();
+    if (n == 0) {
+        cout << "Grafo vazio. Não é possível colorir DSATUR.\n";
+        return;
+    }
+
+    // grau dos vértices
+    vector<int> grau(n, 0);
+    for (int i = 0; i < n; ++i) {
+        Vizinho* p = grafo->vertices[i].vizinhos;
+        while (p != nullptr) { grau[i]++; p = p->prox; }
+    }
+
+    // cores atribuídas (0 = não colorido). Usamos cores >=1
+    vector<int> cor(n, 0);
+
+    // conjunto de cores dos vizinhos (para calcular saturação)
+    vector<unordered_set<int>> coresVizinhos(n);
+
+    // saturação = número de cores distintas nos vizinhos (size do set)
+
+    // 1) escolhe vértice inicial: maior grau
+    int primeiro = 0;
+    for (int i = 1; i < n; ++i) if (grau[i] > grau[primeiro]) primeiro = i;
+
+    // colore o primeiro com cor 1
+    cor[primeiro] = 1;
+
+    // atualiza conjuntos dos vizinhos
+    Vizinho* p = grafo->vertices[primeiro].vizinhos;
+    while (p != nullptr) {
+        int id = p->vizinho->valor;
+        if (coresVizinhos[id].insert(1).second) {
+            // inseriu nova cor nos vizinhos
+        }
+        p = p->prox;
+    }
+
+    // 2) enquanto houver vértice não colorido, escolha por maior saturação
+    for (int passo = 1; passo < n; ++passo) {
+        int escolhido = -1;
+        int melhorSatur = -1;
+        int melhorGrau = -1;
+
+        for (int v = 0; v < n; ++v) {
+            if (cor[v] != 0) continue; // já colorido
+            int sat = (int)coresVizinhos[v].size();
+            if (escolhido == -1
+                || sat > melhorSatur
+                || (sat == melhorSatur && grau[v] > melhorGrau)) {
+                escolhido = v;
+                melhorSatur = sat;
+                melhorGrau = grau[v];
+            }
+        }
+
+        if (escolhido == -1) break; // todos coloridos
+
+        // encontra menor cor disponível (a partir de 1)
+        int c = 1;
+        while (coresVizinhos[escolhido].count(c)) ++c;
+        cor[escolhido] = c;
+
+        // atualiza conjuntos dos vizinhos (adicionar cor quando necessário)
+        Vizinho* q = grafo->vertices[escolhido].vizinhos;
+        while (q != nullptr) {
+            int id = q->vizinho->valor;
+            if (cor[id] == 0) {
+                coresVizinhos[id].insert(c);
+            }
+            q = q->prox;
+        }
+    }
+
+    // copia as cores para o grafo
+    for (int i = 0; i < n; ++i) grafo->vertices[i].cor = cor[i];
+
+    cout << "\n=== Coloração DSATUR concluída ===\n";
+    salvar_DOT(grafo, "../arquivos/DSATUR.dot", n);
+    system("dot -Tpng ../arquivos/DSATUR.dot -o ../arquivos/DSATUR.png");
+}
+
+
 void coloracao_gulosa(Grafo *grafo) {
     int n = grafo->vertices.size();
     if (n == 0) {
@@ -327,14 +412,9 @@ void coloracao_gulosa(Grafo *grafo) {
                 usado[cor[idViz]] = true;
             v = v->prox;
         }
-
-        // encontra a menor cor disponível
         int corEscolhida = 0;
-        while (corEscolhida < n && usado[corEscolhida])
-            corEscolhida++;
-
+        while (corEscolhida < n && usado[corEscolhida]) corEscolhida++;//descobre a menor cor disponível
         cor[u] = corEscolhida;
-
         // limpa o vetor “usado” para próxima iteração
         v = grafo->vertices[u].vizinhos;
         while (v != nullptr) {
@@ -345,18 +425,17 @@ void coloracao_gulosa(Grafo *grafo) {
         }
     }
 
-    // salva no grafo
     for (int i = 0; i < n; i++)
         grafo->vertices[i].cor = cor[i];
 
     cout << "\n=== Coloração Gulosa (vértices) ===\n";
     for (int i = 0; i < n; i++)
-        cout << "Vértice " << i << " → cor " << cor[i] << endl;
+        cout << "Vértice " << i << " => cor " << cor[i] << endl;
 
-    salvar_DOT(grafo, "../arquivos/COLORACAO.dot", n);
-    system("dot -Tpng ../arquivos/COLORACAO.dot -o ../arquivos/COLORACAO.png");
+    salvar_DOT(grafo, "../arquivos/GULOSA.dot", n);
+    system("dot -Tpng ../arquivos/GULOSA.dot -o ../arquivos/GULOSA.png");
 
-    cout << "\nColoração salva em COLORACAO.dot e COLORACAO.png\n";
+    cout << "\nColoração salva em GULOSA.dot e GULOSA.png\n";
 }
 
 void gerar_grafo(Grafo *grafo){
@@ -521,6 +600,7 @@ int menu(){
     cout << "2 - Ler Grafo Existente (DOT)\n";
     cout << "3 - Gerar DIJKSTRA\n";
     cout << "4 - Coloracao Gulosa\n";
+    cout << "5 - Coloracao DSATUR\n";
     cout << "0 - Sair\n";
     cout << "Opção: ";
 
@@ -533,7 +613,7 @@ int main(){
     SetConsoleOutputCP(65001);
     Grafo *grafo = new Grafo;
 
-    lerDOT(grafo, "../arquivos/grafoAleatorio.dot");
+    //lerDOT(grafo, "../arquivos/grafoAleatorio.dot");
 
     int option;
 
@@ -552,6 +632,9 @@ int main(){
             break;
         case 4:
             coloracao_gulosa(grafo);
+            break;
+        case 5:
+            coloracaoDSATUR(grafo);
             break;
         case 0:
             cout << "\nSaindo...\n";
